@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import api from '../../api/axiosConfig';
 import './AnimalList.css';
 
@@ -11,8 +11,6 @@ interface Animal {
     poids_kg: number | null;
 }
 
-// Interface séparée pour le formulaire : age et poids_kg sont des strings
-// pour permettre la saisie intermédiaire (ex: "1.5" en cours de frappe)
 interface AnimalEditForm {
     nom_animal: string;
     espece: string;
