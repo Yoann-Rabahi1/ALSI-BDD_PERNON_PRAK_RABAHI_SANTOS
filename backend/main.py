@@ -63,3 +63,27 @@ async def read_user(user_id : int, db:db_dependency):
     if user is None:
         raise HTTPException(status_code=404, detail="L'utilisateur n'est pas trouvé")
     return user
+
+
+@app.post("/login")
+async def login(credentials: dict, db: db_dependency):
+
+    email = credentials.get("mail")
+    password = credentials.get("mot_de_passe")
+
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email et mot de passe requis")
+
+    user = db.query(models.CompteUser).filter(models.CompteUser.mail == email).first()
+
+    if not user or user.mot_de_passe != password:
+        raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
+
+    return {
+        "status": "success",
+        "user": {
+            "id_user": user.id_user,
+            "mail": user.mail,
+            "role": user.role
+        }
+    }
