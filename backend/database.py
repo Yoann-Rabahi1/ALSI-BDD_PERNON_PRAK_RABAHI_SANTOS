@@ -3,12 +3,18 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-host=os.getenv("DB_HOST", "localhost")
-user=os.getenv("DB_USER", "root"),
-password=os.getenv("DB_PASSWORD", "")
-database=os.getenv("DB_NAME", "clinique_veto")
+from dotenv import load_dotenv
+load_dotenv()
 
-SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://root:tmQLJzXIetdYXDhdibFMpPROnJldXqWB@kodama.proxy.rlwy.net:11053/railway"
+# On nettoie les variables (Pas de virgules à la fin !)
+db_user = os.getenv("DB_USER", "root")
+db_password = os.getenv("DB_PASSWORD", "")
+db_host = os.getenv("DB_HOST", "localhost")
+db_name = os.getenv("DB_NAME", "railway") # Vérifie si c'est railway ou clinique_veto
+db_port = os.getenv("DB_PORT", "11053") # Utilise la variable du .env ou le port Railway
+
+# Construction de l'URL propre
+SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 
 # Création de l'engine
 engine = create_engine(
