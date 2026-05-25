@@ -27,6 +27,22 @@ class Etablissement(EtablissementBase):
     class Config:
         from_attributes = True
 
+
+
+# --- SCHÉMAS PROPRIO ---
+
+class ProprietaireCreate(BaseModel):
+    nom: str
+    prenom: str
+    telephone: str
+    id_animal: Optional[int] = None
+    id_user: int
+
+class ProprietaireOut(ProprietaireCreate):
+    id_proprio: int
+    class Config:
+        from_attributes = True
+
 # --- SCHÉMAS ANIMAL ---
 class AnimalBase(BaseModel):
     nom_animal: str
