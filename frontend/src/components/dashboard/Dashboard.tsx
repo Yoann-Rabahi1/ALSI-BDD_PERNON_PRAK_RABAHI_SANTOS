@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AddAnimal from '../addAnimal/AddAnimal'; 
-import AnimalList from '../animalList/AnimalList'; // On importe la liste
+import AnimalList from '../AnimalList/AnimalList'; // On importe la liste
 import './Dashboard.css';
 
 const Dashboard = () => {
