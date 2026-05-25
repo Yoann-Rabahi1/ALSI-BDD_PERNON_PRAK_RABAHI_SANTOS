@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DECIMAL, DateTime, Enum, Text
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DECIMAL, DateTime, Enum, Text, Float
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -19,18 +19,31 @@ class Etablissement(Base):
     ville = Column(String(75))
     adresse = Column(String(75))
 
-# 3. TABLE ANIMAL
+class Proprietaire(Base):
+    __tablename__ = "proprietaires"
+    id_proprietaire = Column(Integer, primary_key=True, index=True)
+    nom = Column(String(50))
+    prenom = Column(String(50))
+    telephone = Column(String(15))
+    id_user = Column(Integer, ForeignKey("compte_users.id_user"), unique=True)
+
+    # ICI : On utilise le pluriel "animaux" car un proprio peut en avoir plusieurs
+    animaux = relationship("Animal", back_populates="proprietaire")
+    user = relationship("CompteUser")
+
 class Animal(Base):
     __tablename__ = "animaux"
     id_animal = Column(Integer, primary_key=True, index=True)
-    nom_animal = Column(String(75), nullable=False)
+    nom_animal = Column(String(50))
     espece = Column(String(50))
     race = Column(String(50))
     age = Column(Integer)
-    poids_kg = Column(DECIMAL(5, 2))
+    poids_kg = Column(Float)
+    
+    id_proprietaire = Column(Integer, ForeignKey("proprietaires.id_proprietaire"))
 
-    # Ajout du lien vers proprietaire pour back_populates
-    proprietaire = relationship("Proprietaire", back_populates="animal")
+    # ICI : back_populates DOIT correspondre EXACTEMENT au nom défini plus haut ("animaux")
+    proprietaire = relationship("Proprietaire", back_populates="animaux")
 
 # 4. TABLE VETERINAIRE
 class Veterinaire(Base):
@@ -44,20 +57,6 @@ class Veterinaire(Base):
     etablissement = relationship("Etablissement")
     compte = relationship("CompteUser")
 
-# 5. TABLE PROPRIETAIRE
-class Proprietaire(Base):
-    __tablename__ = "proprietaires"
-    id_proprietaire = Column(Integer, primary_key=True, index=True)
-    nom = Column(String(50))
-    prenom = Column(String(50))
-    telephone = Column(String(15))
-    
-    # Correction des FK pour qu'elles matchent les __tablename__
-    id_animal = Column(Integer, ForeignKey("animaux.id_animal"), nullable=True)
-    id_user = Column(Integer, ForeignKey("compte_users.id_user"), unique=True)
-
-    animal = relationship("Animal", back_populates="proprietaire")
-    user = relationship("CompteUser")
 
 # 6. TABLE MEDICAMENT
 class Medicament(Base):

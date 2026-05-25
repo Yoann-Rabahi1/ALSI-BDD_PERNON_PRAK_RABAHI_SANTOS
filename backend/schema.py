@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
@@ -16,6 +16,16 @@ class CompteUser(CompteUserBase):
     class Config:
         from_attributes = True
 
+
+# Schéma combiné pour l'inscription
+class UserSignup(BaseModel):
+    mail: str
+    mot_de_passe: str
+    role: str
+    nom: str
+    prenom: str
+    telephone: str
+
 # --- SCHÉMAS ÉTABLISSEMENT ---
 class EtablissementBase(BaseModel):
     nom_etablissement: str
@@ -29,21 +39,8 @@ class Etablissement(EtablissementBase):
 
 
 
-# --- SCHÉMAS PROPRIO ---
-
-class ProprietaireCreate(BaseModel):
-    nom: str
-    prenom: str
-    telephone: str
-    id_animal: Optional[int] = None
-    id_user: int
-
-class ProprietaireOut(ProprietaireCreate):
-    id_proprio: int
-    class Config:
-        from_attributes = True
-
 # --- SCHÉMAS ANIMAL ---
+
 class AnimalBase(BaseModel):
     nom_animal: str
     espece: Optional[str] = None
@@ -51,11 +48,32 @@ class AnimalBase(BaseModel):
     age: Optional[int] = None
     poids_kg: Optional[float] = None
 
-class Animal(AnimalBase):
-    id_animal: int
-    class Config:
-        from_attributes = True
+class AnimalCreate(AnimalBase):
+    id_proprietaire: int 
 
+class AnimalOut(AnimalBase):
+    id_animal: int
+    id_proprietaire: int
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+# --- SCHÉMAS PROPRIÉTAIRE ---
+
+class ProprietaireBase(BaseModel):
+    nom: str
+    prenom: str
+    telephone: str
+    id_user: int
+
+class ProprietaireCreate(ProprietaireBase):
+    pass
+
+class ProprietaireOut(ProprietaireBase):
+    id_proprietaire: int
+    
+
+    model_config = ConfigDict(from_attributes=True)
 # --- SCHÉMAS VÉTÉRINAIRE ---
 class VeterinaireBase(BaseModel):
     nom: str
