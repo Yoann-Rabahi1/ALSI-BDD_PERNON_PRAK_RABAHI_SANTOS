@@ -27,3 +27,10 @@ async def create_user(user: CompteUserCreate, db:db_dependency):
     db.commit()
     db.refresh(db_user)
     return db_user
+
+@app.get("/users/{user_id}", response_model=CompteUser)
+async def read_user(user_id : int, db:db_dependency):
+    user = db.query(models.CompteUser).filter(models.CompteUser.id_user == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="L'utilisateur n'est pas trouvé")
+    return user
