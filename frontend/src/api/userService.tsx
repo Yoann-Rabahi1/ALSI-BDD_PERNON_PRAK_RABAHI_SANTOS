@@ -1,23 +1,15 @@
 import api from './axiosConfig';
 
-// 1. Créer le compte et récupérer l'ID
-export const createAccount = async (email : string, password : string, role : string) => {
-    const response = await api.post('/users/', {
-        mail: email,
-        mot_de_passe: password,
-        role: role
-    });
-    return response.data;
-};
-
-// 2. Créer le profil propriétaire avec l'ID injecté
-export const createProprietaireProfile = async (id_user: number, nom: string, prenom: string, telephone: string) => {
-    const response = await api.post('/proprietaires/', {
-        nom,
-        prenom,
-        telephone,
-        id_user,
-        id_animal: null 
+// userService.ts
+export const registerUserFull = async (formData: any) => {
+    // formData contient : email, password, role, nom, prenom, phone
+    const response = await api.post('/signup-full', {
+        mail: formData.email,
+        mot_de_passe: formData.password,
+        role: formData.role,
+        nom: formData.nom,
+        prenom: formData.prenom,
+        telephone: formData.phone
     });
     return response.data;
 };

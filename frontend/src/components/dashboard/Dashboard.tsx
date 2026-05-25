@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AddAnimal from '../addAnimal/AddAnimal'; 
+import AnimalList from '../animalList/AnimalList'; // On importe la liste
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -22,7 +24,6 @@ const Dashboard = () => {
 
     if (!user) return null;
 
-    // On récupère l'initiale pour l'avatar
     const userInitial = user.mail ? user.mail.charAt(0).toUpperCase() : 'U';
 
     return (
@@ -45,7 +46,7 @@ const Dashboard = () => {
                     </div>
                     
                     <button onClick={handleLogout} className="btn-logout-icon" title="Déconnexion">
-                         🚪
+                        🚪
                     </button>
                 </div>
             </nav>
@@ -57,17 +58,38 @@ const Dashboard = () => {
                     <p className="subtitle">Heureux de vous revoir sur votre interface de gestion.</p>
                 </section>
 
-                <div className="grid-cards">
-                    {/* On pourra injecter ici des composants selon la page choisie */}
-                    <div className="card">
-                        <h3>Aperçu</h3>
-                        <p>Statistiques et activités récentes apparaîtront ici.</p>
-                    </div>
+                {/* Utilisation d'une div pour séparer les sections si besoin, ou rester en grid */}
+                <div className="dashboard-content">
                     
+                    {/* ZONE PROPRIÉTAIRE */}
+                    {user.role === 'client' && (
+                        <div className="owner-layout">
+                            <div className="grid-cards">
+                                <AddAnimal />
+                                <div className="card">
+                                    <h3>Aperçu</h3>
+                                    <p>Statistiques et activités récentes.</p>
+                                </div>
+                            </div>
+                            
+                            {/* On affiche la liste des animaux en dessous ou à côté */}
+                            <div className="full-width-section" style={{marginTop: '20px'}}>
+                                <AnimalList />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ZONE VÉTO */}
                     {user.role === 'veto' && (
-                        <div className="card">
-                            <h3>Gestion Clinique</h3>
-                            <p>Accès aux dossiers médicaux et planning.</p>
+                        <div className="grid-cards">
+                            <div className="card">
+                                <h3>Gestion Clinique</h3>
+                                <p>Accès aux dossiers médicaux et planning.</p>
+                            </div>
+                            <div className="card">
+                                <h3>Statistiques</h3>
+                                <p>Nombre de consultations ce mois-ci.</p>
+                            </div>
                         </div>
                     )}
                 </div>

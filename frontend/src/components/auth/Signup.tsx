@@ -1,32 +1,43 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createAccount } from '../../api/userService'; // Import de l'API
 import './Auth.css';
+import { registerUserFull } from '../../api/userService';
 
 const Signup = () => {
+    const navigate = useNavigate();
+    
+    // États pour les identifiants
     const [role, setRole] = useState('client');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false); // État pour bloquer le bouton
-    const navigate = useNavigate();
+    
+    // États pour le profil (on les met ici pour tout envoyer d'un coup)
+    const [nom, setNom] = useState('');
+    const [prenom, setPrenom] = useState('');
+    const [phone, setPhone] = useState('');
+    
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+
         try {
-            // APPEL RÉEL À L'API
-            const user = await createAccount(email, password, role);
-            
-            // On passe l'ID utilisateur récupéré à l'étape suivante
-            navigate('/register-profile', { 
-                state: { 
-                    userId: user.id_user, 
-                    role: role 
-                } 
+            // On envoie TOUT au backend en une seule fois
+            await registerUserFull({ 
+                email, 
+                password, 
+                role, 
+                nom, 
+                prenom, 
+                phone 
             });
+            
+            alert("Compte créé avec succès ! Connectez-vous.");
+            navigate('/login');
         } catch (err: any) {
             console.error(err);
-            alert("Erreur lors de la création du compte. L'email est peut-être déjà utilisé.");
+            alert(err.response?.data?.detail || "Erreur lors de l'inscription.");
         } finally {
             setLoading(false);
         }
@@ -37,9 +48,9 @@ const Signup = () => {
             <div className="auth-card">
                 <form className="auth-form" onSubmit={handleSubmit}>
                     <h2>Rejoignez-nous</h2>
-                    <p className="auth-subtitle">Créez votre compte en quelques secondes</p>
+                    <p className="auth-subtitle">Créez votre profil en une seule étape</p>
 
-                    <label style={{fontSize: '0.9rem', marginBottom: '8px', display: 'block'}}>Vous êtes :</label>
+                    <label className="label-role">Vous êtes :</label>
                     <div className="role-group">
                         <button 
                             type="button" 
@@ -53,9 +64,25 @@ const Signup = () => {
                         >🩺 Vétérinaire</button>
                     </div>
 
+                    <div className="input-row">
+                        <div className="input-field">
+                            <label>Prénom</label>
+                            <input type="text" value={prenom} onChange={e => setPrenom(e.target.value)} required placeholder="Yoann" />
+                        </div>
+                        <div className="input-field">
+                            <label>Nom</label>
+                            <input type="text" value={nom} onChange={e => setNom(e.target.value)} required placeholder="Rabahi" />
+                        </div>
+                    </div>
+
+                    <div className="input-field">
+                        <label>Téléphone</label>
+                        <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} required placeholder="06..." />
+                    </div>
+
                     <div className="input-field">
                         <label>Email</label>
-                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="nom@exemple.com" />
                     </div>
 
                     <div className="input-field">
@@ -64,7 +91,7 @@ const Signup = () => {
                     </div>
 
                     <button type="submit" className="btn-auth" disabled={loading}>
-                        {loading ? "Création..." : "Continuer"}
+                        {loading ? "Création en cours..." : "S'inscrire"}
                     </button>
 
                     <p className="auth-footer">

@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { createProprietaireProfile } from '../../api/userService';
-import '../auth/Auth.css'; // On réutilise le style commun
+import api from '../../api/axiosConfig'; 
+import '../auth/Auth.css';
 
 const RegisterProfile = () => {
     const location = useLocation();
     const navigate = useNavigate();
     
-    // On récupère les données passées par Signup.tsx
-    // userId est l'ID généré par la BDD pour le compte_user
+    // Récupération de l'ID et du rôle transmis par Signup.tsx
     const { userId, role } = location.state || {}; 
 
     const [nom, setNom] = useState('');
@@ -16,7 +15,7 @@ const RegisterProfile = () => {
     const [phone, setPhone] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Sécurité : si on tente d'accéder à la page sans être passé par Signup
+    // Sécurité si accès direct sans inscription préalable
     if (!userId) {
         return (
             <div className="auth-container">
@@ -35,20 +34,32 @@ const RegisterProfile = () => {
     const handleProfileSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        
+        const profileData = {
+            nom: nom,
+            prenom: prenom,
+            telephone: phone,
+            id_user: userId
+        };
+
         try {
-            // Logique différente selon le rôle choisi à l'étape 1
             if (role === 'client') {
-                await createProprietaireProfile(userId, nom, prenom, phone);
-                alert("Votre profil Propriétaire est prêt !");
+                // On utilise PUT car la ligne avec l'id_user existe déjà en BDD (Trigger ou Auto-création)
+                // On vient "écraser" les valeurs par défaut
+                await api.put(`/proprietaires/me/${userId}`, profileData);
+                alert("Super Yoann, ton profil est maintenant complet ! 🐾");
             } else {
-                // Ici tu pourras appeler createVetoProfile plus tard
+                // Logique pour les vétérinaires (à adapter selon ta route veto)
+                await api.put(`/vetos/me/${userId}`, profileData);
                 alert("Profil Vétérinaire enregistré !");
             }
             
-            // Une fois terminé, on redirige vers la connexion
+            // Redirection vers le login pour rafraîchir la session avec les nouvelles infos
             navigate('/login');
-        } catch (err) {
-            alert("Erreur lors de l'enregistrement du profil. Vérifiez votre connexion.");
+        } catch (err: any) {
+            console.error(err);
+            const errorMsg = err.response?.data?.detail || "Erreur lors de l'enregistrement.";
+            alert(`Erreur : ${errorMsg}`);
         } finally {
             setLoading(false);
         }
@@ -58,9 +69,9 @@ const RegisterProfile = () => {
         <div className="auth-container">
             <div className="auth-card">
                 <form onSubmit={handleProfileSubmit} className="auth-form">
-                    <h2>Dernière étape</h2>
+                    <h2>Finalisons votre profil</h2>
                     <p className="auth-subtitle">
-                        Complétez vos informations pour finaliser votre inscription {role === 'veto' ? 'vétérinaire' : 'propriétaire'}.
+                        On y est presque ! Plus que quelques infos pour personnaliser votre espace {role === 'veto' ? 'vétérinaire' : 'propriétaire'}.
                     </p>
 
                     <div className="input-field">
@@ -70,7 +81,7 @@ const RegisterProfile = () => {
                             value={prenom} 
                             onChange={e => setPrenom(e.target.value)} 
                             required 
-                            placeholder="Ex: Jean"
+                            placeholder="Yoann"
                         />
                     </div>
 
@@ -81,7 +92,7 @@ const RegisterProfile = () => {
                             value={nom} 
                             onChange={e => setNom(e.target.value)} 
                             required 
-                            placeholder="Ex: Dupont"
+                            placeholder="Rabahi"
                         />
                     </div>
 
@@ -97,7 +108,7 @@ const RegisterProfile = () => {
                     </div>
 
                     <button type="submit" className="btn-auth" disabled={loading}>
-                        {loading ? "Enregistrement..." : "Terminer l'inscription"}
+                        {loading ? "Mise à jour..." : "Valider mon profil"}
                     </button>
                 </form>
             </div>
