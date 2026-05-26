@@ -1,0 +1,100 @@
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 90vh;
+    background-color: #f8f9fa;
+    font-family: 'Inter', sans-serif;
+}
+
+.auth-card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    width: 100%;
+    max-width: 400px;
+}
+
+.auth-form h2 {
+    margin-bottom: 0.5rem;
+    color: #2d3436;
+    text-align: center;
+}
+
+.auth-subtitle {
+    text-align: center;
+    color: #636e72;
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+}
+
+.input-field {
+    margin-bottom: 1.2rem;
+}
+
+.input-field label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.input-field input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #dfe6e9;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.btn-auth {
+    width: 100%;
+    padding: 0.9rem;
+    background-color: #00b894; /* On change pour un vert médical sympa */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-auth:hover {
+    background-color: #00a887;
+}
+
+.auth-footer {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+.auth-footer a {
+    color: #00b894;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* Style spécifique pour le choix du rôle dans Signup */
+.role-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.role-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #dfe6e9;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.role-btn.active {
+    background: #00b894;
+    color: white;
+    border-color: #00b894;
+}
