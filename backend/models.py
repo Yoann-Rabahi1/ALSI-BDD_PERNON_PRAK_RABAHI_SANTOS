@@ -51,6 +51,7 @@ class Veterinaire(Base):
     id_veterinaire = Column(Integer, primary_key=True, index=True)
     nom = Column(String(50), nullable=False)
     prenom = Column(String(50), nullable=False)
+    telephone = Column(String(10), nullable=False)
     id_etablissement = Column(Integer, ForeignKey("etablissements.id_etablissement"), nullable=True)
     id_user = Column(Integer, ForeignKey("compte_users.id_user"), nullable=False)
 
@@ -71,7 +72,7 @@ class Consultation(Base):
     __tablename__ = "consultations"
     id_consult = Column(Integer, primary_key=True, index=True)
     date_consult = Column(DateTime, nullable=False)
-    diagnostic = Column(Text)
+    diagnostic = Column(Text, default="en attente")
     # Correction de la FK (doit être le nom de la table 'animaux')
     id_animal = Column(Integer, ForeignKey("animaux.id_animal"), nullable=False)
     id_veterinaire = Column(Integer, ForeignKey("veterinaires.id_veterinaire"), nullable=False)

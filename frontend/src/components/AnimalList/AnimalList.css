@@ -54,3 +54,15 @@
 .btn-save { background: #28a745; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; flex: 1; }
 .btn-cancel { background: #6c757d; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; flex: 1; }
 .btn-edit { background: #007bff; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px; }
+
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    cursor: pointer;
+}
+.btn-delete:hover {
+    background: #c0392b;
+}

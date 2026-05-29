@@ -17,7 +17,11 @@ SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{d
 
 # Création de l'engine
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
+    SQLALCHEMY_DATABASE_URL,
+    pool_recycle=300,   # Rafraîchit les connexions toutes les 5 min ( Railway coupe souvent après 10 min)
+    pool_pre_ping=True, # TESTE la connexion avant chaque requête (essentiel !)
+    pool_size=5,        # Nombre de connexions maintenues ouvertes
+    max_overflow=10     # Nombre de connexions supplémentaires autorisées en pic
 )
 
 # Création de la fabrique de sessions
@@ -33,4 +37,5 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
