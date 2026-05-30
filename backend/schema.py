@@ -169,3 +169,40 @@ class PrescriptionOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+# ─────────────────────────────────────────────
+# ÉTABLISSEMENT
+# ─────────────────────────────────────────────
+
+class EtablissementCreate(BaseModel):
+    nom_etablissement: str
+    ville: str
+    adresse: str
+
+class EtablissementOut(BaseModel):
+    id_etablissement: int
+    nom_etablissement: str
+    ville: str
+    adresse: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ─────────────────────────────────────────────
+# VÉTÉRINAIRE AVEC ÉTABLISSEMENT (pour filtre par ville)
+# ─────────────────────────────────────────────
+
+class VeterinaireAvecEtablissement(BaseModel):
+    id_veterinaire: int
+    nom: str
+    prenom: str
+    telephone: str
+    id_etablissement: Optional[int] = None
+    id_user: int
+    etablissement: Optional[EtablissementOut] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+
+
+class QueryRequest(BaseModel):
+    sql_query: str

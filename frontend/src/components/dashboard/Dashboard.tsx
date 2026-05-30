@@ -4,7 +4,7 @@ import AddAnimal from '../addAnimal/AddAnimal';
 import AnimalList from '../AnimalList/AnimalList';
 import DemandeConsultation from '../DemandeConsultation/DemandeConsultation';
 import ConsultationList from '../ConsultationList/ConsultationList';
-import ConsultationListProprio from '../ConsultationProprio/ConsultationProprio'; // Import du nouveau composant
+import ProfilVeto from '../ProfilVeto/ProfilVeto';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -14,6 +14,7 @@ const Dashboard = () => {
     const [idVeto, setIdVeto] = useState<number | null>(null);
     const [animalRefreshKey, setAnimalRefreshKey] = useState(0);
     const [consultRefreshKey, setConsultRefreshKey] = useState(0);
+    const [showProfilVeto, setShowProfilVeto] = useState(false);
 
     useEffect(() => {
         const savedUser = localStorage.getItem('user');
@@ -22,12 +23,19 @@ const Dashboard = () => {
         const parsed = JSON.parse(savedUser);
         setUser(parsed);
 
-        // Récupération simplifiée des IDs (déjà présents dans l'objet user suite à l'optimisation du login)
-        if (parsed.has_profile) {
-            if (parsed.role === 'client' && parsed.id_proprietaire) {
-                setIdProprio(parsed.id_proprietaire);
-            } else if (parsed.role === 'veto' && parsed.id_veterinaire) {
-                setIdVeto(parsed.id_veterinaire);
+        if (parsed.has_profile && parsed.id_user) {
+            if (parsed.role === 'client') {
+                import('../../api/axiosConfig').then(({ default: api }) => {
+                    api.get(`/proprietaires/me/${parsed.id_user}`)
+                        .then(r => setIdProprio(r.data.id_proprietaire))
+                        .catch(() => {});
+                });
+            } else if (parsed.role === 'veto') {
+                import('../../api/axiosConfig').then(({ default: api }) => {
+                    api.get(`/veterinaires/me/${parsed.id_user}`)
+                        .then(r => setIdVeto(r.data.id_veterinaire))
+                        .catch(() => {});
+                });
             }
         }
     }, [navigate]);
@@ -43,12 +51,12 @@ const Dashboard = () => {
         });
     };
 
-    const handleAnimalAdded = useCallback(() => {
-        setAnimalRefreshKey(k => k + 1);
-    }, []);
+    const handleAnimalAdded = useCallback(() => setAnimalRefreshKey(k => k + 1), []);
+    const handleConsultationAdded = useCallback(() => setConsultRefreshKey(k => k + 1), []);
 
-    const handleConsultationAdded = useCallback(() => {
-        setConsultRefreshKey(k => k + 1);
+    // Appelé après sauvegarde du profil veto — met à jour l'affichage navbar
+    const handleProfilSaved = useCallback((nom: string, prenom: string) => {
+        setUser((prev: any) => ({ ...prev, nom, prenom }));
     }, []);
 
     if (!user) return null;
@@ -75,11 +83,32 @@ const Dashboard = () => {
                             </span>
                         </div>
                     </div>
+
+                    {/* Bouton paramètres — veto uniquement */}
+                    {user.role === 'veto' && user.has_profile && (
+                        <button
+                            className="btn-settings-icon"
+                            title="Modifier mon profil"
+                            onClick={() => setShowProfilVeto(true)}
+                        >
+                            ⚙️
+                        </button>
+                    )}
+
                     <button onClick={handleLogout} className="btn-logout-icon" title="Déconnexion">
                         🚪
                     </button>
                 </div>
             </nav>
+
+            {/* MODAL PROFIL VETO */}
+            {showProfilVeto && user.role === 'veto' && (
+                <ProfilVeto
+                    userId={user.id_user}
+                    onClose={() => setShowProfilVeto(false)}
+                    onSaved={handleProfilSaved}
+                />
+            )}
 
             {/* BANDEAU PROFIL INCOMPLET */}
             {!user.has_profile && (
@@ -123,18 +152,7 @@ const Dashboard = () => {
                                     />
                                 )}
                             </div>
-
-                            {/* Section Historique/Consultations pour le proprio */}
                             <div className="full-width-section">
-                                <h2>Historique des consultations</h2>
-                                {idProprio && (
-                                    <ConsultationListProprio idProprio={idProprio} />
-                                )}
-                            </div>
-
-                            {/* Liste des animaux */}
-                            <div className="full-width-section">
-                                <h2>Mes Animaux</h2>
                                 <AnimalList refreshKey={animalRefreshKey} />
                             </div>
                         </div>
@@ -143,31 +161,23 @@ const Dashboard = () => {
                     {/* ── ZONE VÉTÉRINAIRE ── */}
                     {user.role === 'veto' && user.has_profile && (
                         <div className="veto-layout">
-                            <div className="full-width-section">
-                                <h2>Calendrier des soins</h2>
-                                {idVeto && (
-                                    <ConsultationList
-                                        idVeto={idVeto}
-                                        refreshKey={consultRefreshKey}
-                                    />
-                                )}
-                            </div>
+                            {idVeto && (
+                                <ConsultationList
+                                    idVeto={idVeto}
+                                    refreshKey={consultRefreshKey}
+                                />
+                            )}
                         </div>
                     )}
 
-                    {/* ÉTAT VIDE — profil pas encore complété */}
+                    {/* ÉTAT VIDE */}
                     {!user.has_profile && (
                         <div className="empty-state">
-                            <p className="empty-icon">
-                                {user.role === 'veto' ? '🩺' : '🐾'}
-                            </p>
+                            <p className="empty-icon">{user.role === 'veto' ? '🩺' : '🐾'}</p>
                             <h3>Bienvenue sur VetoApp !</h3>
                             <p>Complétez votre profil pour débloquer toutes les fonctionnalités.</p>
-                            <button
-                                className="btn-auth"
-                                onClick={handleCompleteProfile}
-                                style={{ maxWidth: 280, margin: '16px auto 0' }}
-                            >
+                            <button className="btn-auth" onClick={handleCompleteProfile}
+                                style={{ maxWidth: 280, margin: '16px auto 0' }}>
                                 Finaliser mon inscription →
                             </button>
                         </div>

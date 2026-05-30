@@ -22,3 +22,16 @@
 .diag-box.pending .diag-text { color: #92400e; font-style: italic; }
 
 .date-badge { position: absolute; top: 25px; right: 25px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; font-size: 0.8rem; }
+
+.consult-tabs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.consult-tabs { display: flex; gap: 8px; }
+.tab-btn { padding: 6px 16px; border-radius: 20px; border: 1px solid #ccc; cursor: pointer; }
+.tab-btn.active { background: #10b981; color: white; border-color: #10b981; }
+.badge { background: rgba(255,255,255,0.3); border-radius: 10px; padding: 1px 7px; font-size: 12px; margin-left: 6px; }
+.glass-card.past { opacity: 0.75; }
+.diag-text.pending { color: #9ca3af; font-style: italic; }

@@ -13,7 +13,6 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Affiche le message de succès après une inscription
     useEffect(() => {
         if (location.state?.message) {
             setSuccessMsg(location.state.message);
@@ -33,18 +32,25 @@ const Login = () => {
 
             const user = response.data.user;
 
-            // Persiste les infos en localStorage
+            // Sauvegarde des données utilisateur pour la session
             localStorage.setItem('user', JSON.stringify(user));
 
-            // Redirection selon l'état du profil
-            // has_profile = false → le backend n'a pas trouvé de profil complet
-            if (!user.has_profile) {
+            // LOGIQUE DE REDIRECTION PRIORITAIRE
+            // 1. Si c'est un administrateur, on l'envoie sur la console SQL
+            if (user.role === 'admin') {
+                navigate('/admin');
+            } 
+            // 2. Si le profil n'est pas complété (cas Veto/Proprio)
+            else if (!user.has_profile) {
                 navigate('/register-profile', {
                     state: { userId: user.id_user, role: user.role }
                 });
-            } else {
+            } 
+            // 3. Sinon, direction le dashboard classique
+            else {
                 navigate('/dashboard');
             }
+            
         } catch (err: any) {
             setError('Email ou mot de passe incorrect.');
         } finally {
@@ -59,9 +65,7 @@ const Login = () => {
                     <h2>Bon retour !</h2>
                     <p className="auth-subtitle">Connectez-vous à votre espace VetoApp</p>
 
-                    {successMsg && (
-                        <p className="auth-success">✅ {successMsg}</p>
-                    )}
+                    {successMsg && <p className="auth-success">✅ {successMsg}</p>}
 
                     <div className="input-field">
                         <label>Email</label>
@@ -85,9 +89,7 @@ const Login = () => {
                         />
                     </div>
 
-                    {error && (
-                        <p className="auth-error">⚠️ {error}</p>
-                    )}
+                    {error && <p className="auth-error">⚠️ {error}</p>}
 
                     <button type="submit" className="btn-auth" disabled={loading}>
                         {loading ? 'Vérification...' : 'Se connecter'}

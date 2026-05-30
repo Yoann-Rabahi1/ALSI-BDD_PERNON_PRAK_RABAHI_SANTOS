@@ -4,6 +4,7 @@ from typing import Annotated
 import models
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, SessionLocal, get_db
+from sqlalchemy import text
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 from schema import *
@@ -207,6 +208,67 @@ async def create_proprietaire(proprio: ProprietaireCreate, db: db_dependency):
         raise HTTPException(status_code=400, detail="Vous avez déjà un profil propriétaire.")
 
 
+
+# ─────────────────────────────────────────────
+# ÉTABLISSEMENTS
+# ─────────────────────────────────────────────
+
+@app.get("/etablissements/villes")
+async def get_villes(db: db_dependency):
+    """Retourne la liste des villes distinctes ayant au moins un établissement."""
+    rows = db.query(models.Etablissement.ville).distinct().all()
+    return [r[0] for r in rows if r[0]]
+
+@app.get("/etablissements/", response_model=List[EtablissementOut])
+async def get_etablissements(ville: str = None, db: db_dependency = None):
+    """Liste tous les établissements, filtrables par ville."""
+    q = db.query(models.Etablissement)
+    if ville:
+        q = q.filter(models.Etablissement.ville == ville)
+    return q.all()
+
+@app.post("/etablissements/", response_model=EtablissementOut, status_code=201)
+async def create_etablissement(data: EtablissementCreate, db: db_dependency):
+    existing = db.query(models.Etablissement).filter(
+        models.Etablissement.nom_etablissement == data.nom_etablissement,
+        models.Etablissement.ville == data.ville
+    ).first()
+    if existing:
+        return existing  # Évite les doublons silencieusement
+    etab = models.Etablissement(**data.model_dump())
+    db.add(etab)
+    db.commit()
+    db.refresh(etab)
+    return etab
+
+@app.get("/veterinaires/ville/{ville}", response_model=List[VeterinaireAvecEtablissement])
+async def get_vetos_par_ville(ville: str, db: db_dependency):
+    """Retourne les vétérinaires exerçant dans une ville donnée."""
+    vetos = db.query(models.Veterinaire).join(
+        models.Etablissement,
+        models.Veterinaire.id_etablissement == models.Etablissement.id_etablissement
+    ).filter(
+        models.Etablissement.ville == ville
+    ).options(joinedload(models.Veterinaire.etablissement)).all()
+
+    return [
+        {
+            "id_veterinaire": v.id_veterinaire,
+            "nom": v.nom,
+            "prenom": v.prenom,
+            "telephone": v.telephone,
+            "id_etablissement": v.id_etablissement,
+            "id_user": v.id_user,
+            "etablissement": {
+                "id_etablissement": v.etablissement.id_etablissement,
+                "nom_etablissement": v.etablissement.nom_etablissement,
+                "ville": v.etablissement.ville,
+                "adresse": v.etablissement.adresse,
+            } if v.etablissement else None
+        }
+        for v in vetos
+    ]
+
 # ─────────────────────────────────────────────
 # VÉTÉRINAIRES
 # ─────────────────────────────────────────────
@@ -248,8 +310,8 @@ async def update_veterinaire(user_id: int, data: VeterinaireUpdate, db: db_depen
 
     veto.nom = data.nom
     veto.prenom = data.prenom
-    if data.id_etablissement is not None:
-        veto.id_etablissement = data.id_etablissement
+    veto.telephone = data.telephone
+    veto.id_etablissement = data.id_etablissement
 
     db.commit()
     db.refresh(veto)
@@ -451,6 +513,25 @@ async def get_prescriptions(id_consult: int, db: db_dependency):
     return db.query(models.Prescription)\
         .options(joinedload(models.Prescription.medicament))\
         .filter(models.Prescription.id_consult == id_consult).all()
+
+
+@app.post("/admin/query")
+async def execute_raw_query(request: QueryRequest, db: db_dependency):
+    try:
+        # On utilise text() pour transformer la string en requête SQLAlchemy
+        result = db.execute(text(request.sql_query))
+        
+        # Si c'est un SELECT, on récupère les lignes
+        if request.sql_query.strip().lower().startswith("select"):
+            rows = result.mappings().all()
+            return {"results": [dict(row) for row in rows]}
+        
+        # Sinon (INSERT/UPDATE/DELETE), on commit et on renvoie le nombre de lignes
+        db.commit()
+        return {"results": [], "message": f"{result.rowcount} lignes affectées."}
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

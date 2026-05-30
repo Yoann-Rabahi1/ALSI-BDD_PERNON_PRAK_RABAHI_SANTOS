@@ -1,0 +1,7 @@
+.etab-section { margin-top: 16px; border-top: 1px solid #eee; padding-top: 16px; }
+.etab-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+.etab-create-form { background: #f9fafb; border-radius: 8px; padding: 12px; margin-top: 8px; }
+.etab-confirmed { color: #10b981; font-size: 13px; margin-top: 8px; }
+.btn-confirm-etab { background: #10b981; color: white; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; }
+.btn-cancel-etab { background: transparent; border: 1px solid #ccc; border-radius: 6px; padding: 8px 16px; cursor: pointer; margin-left: 8px; }
+.veto-info-card { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; margin-top: 8px; font-size: 13px; }
