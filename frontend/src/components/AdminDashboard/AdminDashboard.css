@@ -132,7 +132,6 @@ select, input {
 
 select:focus, input:focus {
     border-color: var(--primary);
-    ring: 2px solid #bfdbfe;
 }
 
 .search-box {
