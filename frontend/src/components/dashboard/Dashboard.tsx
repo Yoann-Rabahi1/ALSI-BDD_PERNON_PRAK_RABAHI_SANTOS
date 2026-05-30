@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../api/axiosConfig'; // Assure-toi que le chemin est correct
+import api from '../../api/axiosConfig';
 import AddAnimal from '../addAnimal/AddAnimal';
 import AnimalList from '../AnimalList/AnimalList';
 import DemandeConsultation from '../DemandeConsultation/DemandeConsultation';
@@ -43,10 +43,10 @@ const Dashboard = () => {
     };
 
     const handleDeactivate = async () => {
-        const confirm = window.confirm("ATTENTION : Voulez-vous vraiment désactiver votre compte ? Vous ne pourrez plus vous connecter, mais vos données de consultation seront conservées par la clinique.");
+        const confirm = window.confirm("⚠️ Attention : Voulez-vous vraiment désactiver votre compte ? Vous ne pourrez plus vous connecter, mais vos données de consultation resteront enregistrées.");
         if (confirm && user) {
             try {
-                // Appel de ta nouvelle route simple
+                // Route simple avec l'ID en paramètre
                 await api.patch(`/users/desactiver/${user.id_user}`);
                 localStorage.removeItem('user');
                 navigate('/login');
@@ -75,7 +75,7 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard-wrapper">
-            {/* --- NAVBAR --- */}
+            {/* BARRE DE NAVIGATION */}
             <nav className="dashboard-navbar">
                 <div className="nav-brand">🐾 VetoApp</div>
                 <div className="nav-actions">
@@ -87,17 +87,17 @@ const Dashboard = () => {
                         </div>
                     </div>
                     {user.role === 'veto' && user.has_profile && (
-                        <button className="nav-btn" onClick={() => setShowProfilVeto(true)}>⚙️</button>
+                        <button className="nav-btn" onClick={() => setShowProfilVeto(true)} title="Paramètres">⚙️</button>
                     )}
                     <button className="nav-btn logout" onClick={handleLogout} title="Déconnexion">🚪</button>
                 </div>
             </nav>
 
-            {/* --- BANDEAU PROFIL INCOMPLET --- */}
+            {/* BANDEAU PROFIL INCOMPLET */}
             {!user.has_profile && (
                 <div className="status-banner warning">
                     <p>⚠️ <strong>Profil incomplet :</strong> Finalisez votre inscription pour accéder à vos outils.</p>
-                    <button onClick={handleCompleteProfile}>Compléter maintenant</button>
+                    <button onClick={handleCompleteProfile}>Compléter mon profil</button>
                 </div>
             )}
 
@@ -108,38 +108,41 @@ const Dashboard = () => {
                 </header>
 
                 <div className="dashboard-content">
-                    {/* --- VUE CLIENT --- */}
+                    {/* ZONE PROPRIÉTAIRE */}
                     {user.role === 'client' && user.has_profile && (
-                        <div className="owner-layout-grid">
-                            <aside className="dashboard-sidebar">
-                                <div className="dashboard-card action-card">
-                                    <div className="card-header"><h4>🐾 Nouvel Animal</h4></div>
-                                    <AddAnimal onAnimalAdded={handleAnimalAdded} />
-                                </div>
-                            </aside>
+                        <div className="owner-dashboard-layout">
+                            <div className="top-actions-grid">
+                                <aside className="sidebar-action">
+                                    <div className="dashboard-card small">
+                                        <div className="card-header"><h4>🐾 Nouvel Animal</h4></div>
+                                        <AddAnimal onAnimalAdded={handleAnimalAdded} />
+                                    </div>
+                                </aside>
 
-                            <section className="dashboard-main-action">
-                                <div className="dashboard-card action-card large">
-                                    <div className="card-header"><h4>📅 Prendre Rendez-vous</h4></div>
-                                    {idProprio && (
-                                        <DemandeConsultation 
-                                            idProprio={idProprio} 
-                                            onConsultationAdded={handleConsultationAdded} 
-                                        />
-                                    )}
-                                </div>
-                            </section>
+                                <section className="main-action">
+                                    <div className="dashboard-card large">
+                                        <div className="card-header"><h4>📅 Prendre Rendez-vous</h4></div>
+                                        {idProprio && (
+                                            <DemandeConsultation 
+                                                idProprio={idProprio} 
+                                                onConsultationAdded={handleConsultationAdded} 
+                                            />
+                                        )}
+                                    </div>
+                                </section>
+                            </div>
 
-                            <footer className="dashboard-footer-full">
-                                <div className="dashboard-card">
+                            <footer className="dashboard-footer">
+                                <div className="dashboard-card full-width">
                                     <div className="card-header"><h3>📁 Dossiers Médicaux</h3></div>
                                     <AnimalList refreshKey={animalRefreshKey} />
                                 </div>
 
-                                {/* ZONE DE DANGER */}
                                 <div className="danger-zone">
-                                    <h3>Zone de Danger</h3>
-                                    <p>La désactivation de votre compte est définitive. Vous ne pourrez plus accéder à vos animaux.</p>
+                                    <div className="danger-content">
+                                        <h3>Zone de Danger</h3>
+                                        <p>En désactivant votre compte, vous ne pourrez plus vous connecter. Vos archives resteront accessibles à la clinique.</p>
+                                    </div>
                                     <button className="btn-deactivate" onClick={handleDeactivate}>
                                         Désactiver mon compte
                                     </button>
@@ -148,11 +151,11 @@ const Dashboard = () => {
                         </div>
                     )}
 
-                    {/* --- VUE VÉTO --- */}
+                    {/* ZONE VÉTÉRINAIRE */}
                     {user.role === 'veto' && user.has_profile && idVeto && (
-                        <div className="veto-layout">
+                        <div className="veto-dashboard-layout">
                             <div className="dashboard-card full-width">
-                                <div className="card-header"><h3>🩺 Consultations en attente</h3></div>
+                                <div className="card-header"><h3>🩺 Consultations en cours</h3></div>
                                 <ConsultationList idVeto={idVeto} refreshKey={consultRefreshKey} />
                             </div>
                         </div>

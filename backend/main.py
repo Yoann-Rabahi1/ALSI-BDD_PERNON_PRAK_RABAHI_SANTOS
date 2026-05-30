@@ -92,41 +92,54 @@ async def signup_full(data: UserSignupFull, db: db_dependency):
 
 @app.post("/login")
 async def login(credentials: LoginRequest, db: db_dependency):
+    # 1. On récupère l'utilisateur via SQL pur
+    # .mappings() est CRUCIAL pour éviter l'Internal Server Error
     query = text("SELECT * FROM compte_users WHERE mail = :mail AND est_actif = 1")
-    user = db.execute(query, {"mail": credentials.mail}).fetchone()
+    user = db.execute(query, {"mail": credentials.mail}).mappings().fetchone()
     
+    # 2. Vérification de l'existence du compte
     if not user:
         raise HTTPException(status_code=403, detail="Compte inexistant ou désactivé.")
 
+    # 3. VÉRIFICATION DU MOT DE PASSE
+    # On compare ce que l'user tape avec la colonne 'password' de la BDD
+    if user["mot_de_passe"] != credentials.mot_de_passe:
+        raise HTTPException(status_code=401, detail="Mot de passe incorrect.")
+
+    # 4. Préparation des données de base
     user_data = {
-        "id_user": user.id_user,
-        "mail": user.mail,
-        "role": user.role, # Ce sera maintenant 'veto' après l'UPDATE SQL
+        "id_user": user["id_user"],
+        "mail": user["mail"],
+        "role": user["role"],
         "has_profile": False
     }
 
-    if user.role == "veto":
-        veto = db.query(models.Veterinaire).filter(models.Veterinaire.id_user == user.id_user).first()
+    # 5. Vérification du profil selon le rôle (Veto ou Client)
+    if user["role"] == "veto":
+        # On utilise l'id_user pour chercher dans la table veterinaires
+        veto = db.query(models.Veterinaire).filter(models.Veterinaire.id_user == user["id_user"]).first()
         if veto and veto.nom and veto.nom.strip() not in ["", "À compléter"]:
             user_data["has_profile"] = True
             user_data["id_veterinaire"] = veto.id_veterinaire
             user_data["nom"] = veto.nom
             user_data["prenom"] = veto.prenom
     
-    elif user.role == "client":
-        proprio = db.query(models.Proprietaire).filter(models.Proprietaire.id_user == user.id_user).first()
+    elif user["role"] == "client":
+        # On utilise l'id_user pour chercher dans la table proprietaires
+        proprio = db.query(models.Proprietaire).filter(models.Proprietaire.id_user == user["id_user"]).first()
         if proprio and proprio.nom and proprio.nom.strip() not in ["", "À compléter"]:
             user_data["has_profile"] = True
             user_data["id_proprietaire"] = proprio.id_proprietaire
             user_data["nom"] = proprio.nom
             user_data["prenom"] = proprio.prenom
 
+    # 6. Retour final au frontend React
     return {"status": "success", "user": user_data}
 
 @app.patch("/users/desactiver/{id_user}")
 async def deactivate_user(id_user: int, db: db_dependency):
     # On met à jour le statut directement avec l'ID passé dans l'URL
-    query = text("UPDATE users SET est_actif = 0 WHERE id_user = :id")
+    query = text("UPDATE compte_users SET est_actif = 0 WHERE id_user = :id")
     result = db.execute(query, {"id": id_user})
     db.commit()
     
@@ -284,6 +297,20 @@ async def get_vetos_par_ville(ville: str, db: db_dependency):
         }
         for v in vetos
     ]
+
+@app.delete("/etablissements/{id_etablissement}")
+async def delete_etablissement(id_etablissement: int, db: db_dependency):
+    # On vérifie si l'établissement existe
+    check_query = text("SELECT id_etablissement FROM etablissements WHERE id_etablissement = :id")
+    if not db.execute(check_query, {"id": id_etablissement}).fetchone():
+        raise HTTPException(status_code=404, detail="Établissement introuvable")
+
+    # Suppression réelle
+    # Automatiquement, les vétos liés auront leur id_etablissement mis à NULL
+    db.execute(text("DELETE FROM etablissements WHERE id_etablissement = :id"), {"id": id_etablissement})
+    db.commit()
+    
+    return {"status": "success", "message": "Établissement supprimé. Les vétérinaires rattachés sont désormais indépendants."}
 
 # ─────────────────────────────────────────────
 # VÉTÉRINAIRES
