@@ -15,25 +15,34 @@ const AdminConsole = () => {
     }, []);
 
     const handleExecute = async () => {
+        // Reset des états avant l'exécution
         setError("");
         setResults([]);
         setColumns([]);
+        
         try {
             const response = await api.post('/admin/query', { sql_query: query });
+            
+            // Vérification stricte de la présence de données (DQL: SELECT)
             if (response.data.results && response.data.results.length > 0) {
-                setColumns(Object.keys(response.data.results[0]));
-                setResults(response.data.results);
+                const data = response.data.results;
+                setColumns(Object.keys(data[0]));
+                setResults(data);
+            } 
+            // Cas des requêtes de modification (DML: INSERT, UPDATE, DELETE)
+            else if (response.data.message) {
+                setError(response.data.message);
             } else {
-                setError(response.data.message || "Requête exécutée avec succès.");
+                setError("Requête exécutée avec succès (aucun résultat à afficher).");
             }
         } catch (err: any) {
-            setError(err.response?.data?.detail || "Erreur SQL détectée.");
+            // Affichage de l'erreur SQL brute renvoyée par FastAPI
+            setError(err.response?.data?.detail || "Erreur de syntaxe SQL ou problème de connexion.");
         }
     };
 
     return (
         <div className="admin-wrapper">
-            {/* Header de session */}
             <header className="admin-topbar">
                 <div className="admin-info">
                     <span className="status-indicator"></span>
@@ -48,13 +57,14 @@ const AdminConsole = () => {
                     <textarea 
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Saisissez votre requête SQL ici..."
+                        placeholder="SELECT * FROM animaux WHERE age > 5..."
                     />
                     <button onClick={handleExecute} className="btn-run">
                         ⚡ Exécuter
                     </button>
                 </div>
 
+                {/* Zone de logs pour les messages de succès ou les erreurs */}
                 {error && <div className="console-log">{error}</div>}
 
                 <div className="console-output">
@@ -62,19 +72,25 @@ const AdminConsole = () => {
                         <div className="table-scroll">
                             <table>
                                 <thead>
-                                    <tr>{columns.map(col => <th key={col}>{col}</th>)}</tr>
+                                    <tr>
+                                        {columns.map(col => <th key={col}>{col}</th>)}
+                                    </tr>
                                 </thead>
                                 <tbody>
                                     {results.map((row, i) => (
                                         <tr key={i}>
-                                            {columns.map(col => <td key={col}>{row[col]}</td>)}
+                                            {columns.map(col => (
+                                                <td key={col}>{row[col] !== null ? String(row[col]) : "NULL"}</td>
+                                            ))}
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
                     ) : (
-                        <div className="empty-state">En attente d'instruction...</div>
+                        <div className="empty-state">
+                            {!error && "En attente d'instruction SQL..."}
+                        </div>
                     )}
                 </div>
             </main>

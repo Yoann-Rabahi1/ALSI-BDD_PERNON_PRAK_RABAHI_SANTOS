@@ -92,10 +92,11 @@ async def signup_full(data: UserSignupFull, db: db_dependency):
 
 @app.post("/login")
 async def login(credentials: LoginRequest, db: db_dependency):
-    user = db.query(models.CompteUser).filter(models.CompteUser.mail == credentials.mail).first()
-
-    if not user or user.mot_de_passe != credentials.mot_de_passe:
-        raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
+    query = text("SELECT * FROM compte_users WHERE mail = :mail AND est_actif = 1")
+    user = db.execute(query, {"mail": credentials.mail}).fetchone()
+    
+    if not user:
+        raise HTTPException(status_code=403, detail="Compte inexistant ou désactivé.")
 
     user_data = {
         "id_user": user.id_user,
@@ -121,6 +122,21 @@ async def login(credentials: LoginRequest, db: db_dependency):
             user_data["prenom"] = proprio.prenom
 
     return {"status": "success", "user": user_data}
+
+@app.patch("/users/desactiver/{id_user}")
+async def deactivate_user(id_user: int, db: db_dependency):
+    # On met à jour le statut directement avec l'ID passé dans l'URL
+    query = text("UPDATE users SET est_actif = 0 WHERE id_user = :id")
+    result = db.execute(query, {"id": id_user})
+    db.commit()
+    
+    # On vérifie si une ligne a bien été modifiée
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+        
+    return {"status": "success", "message": f"Le compte {id_user} a été désactivé."}
+
+
 # ─────────────────────────────────────────────
 # COMPTE USER (CRUD de base)
 # ─────────────────────────────────────────────
@@ -445,6 +461,51 @@ async def get_consultations_veto(id_veto: int, db: db_dependency):
         raise HTTPException(status_code=500, detail="Erreur lors de la récupération des données complexes.")
     
 
+@app.get("/consultations/animal/{id_animal}")
+async def get_consultations_with_prescriptions(id_animal: int, db: db_dependency):
+    # Requête SQL complexe avec JOIN pour récupérer l'acte et les médicaments associés
+    query = text("""
+        SELECT 
+            c.id_consult, 
+            c.date_consult, 
+            c.diagnostic,
+            m.nom_medicament,
+            p.posologie,
+            p.duree_traitement
+        FROM consultations c
+        LEFT JOIN prescriptions p ON c.id_consult = p.id_consult
+        LEFT JOIN medicaments m ON p.id_medicament = m.id_medicament
+        WHERE c.id_animal = :id_animal
+        ORDER BY c.date_consult DESC
+    """)
+    
+    result = db.execute(query, {"id_animal": id_animal})
+    rows = result.mappings().all()
+
+    # Logique pour regrouper les prescriptions par consultation
+    consultations_dict = {}
+    for row in rows:
+        id_c = row["id_consult"]
+        if id_c not in consultations_dict:
+            consultations_dict[id_c] = {
+                "id_consult": id_c,
+                "date_consult": row["date_consult"],
+                "diagnostic": row["diagnostic"],
+                "prescriptions": []
+            }
+        
+        # On ajoute la prescription seulement s'il y a un médicament associé
+        if row["nom_medicament"]:
+            consultations_dict[id_c]["prescriptions"].append({
+                "nom_medicament": row["nom_medicament"],
+                "posologie": row["posologie"],
+                "duree_traitement": row["duree_traitement"]
+            })
+
+    return list(consultations_dict.values())
+
+
+
 @app.get("/consultations/proprietaire/{id_proprio}")
 async def get_consultations_proprio(id_proprio: int, db: db_dependency):
     # On cherche les consultations liées aux animaux appartenant à ce propriétaire
@@ -515,21 +576,20 @@ async def get_prescriptions(id_consult: int, db: db_dependency):
         .filter(models.Prescription.id_consult == id_consult).all()
 
 
+from sqlalchemy import text
+
 @app.post("/admin/query")
 async def execute_raw_query(request: QueryRequest, db: db_dependency):
     try:
-        # On utilise text() pour transformer la string en requête SQLAlchemy
         result = db.execute(text(request.sql_query))
         
-        # Si c'est un SELECT, on récupère les lignes
-        if request.sql_query.strip().lower().startswith("select"):
+        if result.returns_rows:
             rows = result.mappings().all()
             return {"results": [dict(row) for row in rows]}
-        
-        # Sinon (INSERT/UPDATE/DELETE), on commit et on renvoie le nombre de lignes
-        db.commit()
-        return {"results": [], "message": f"{result.rowcount} lignes affectées."}
-        
+        else:
+            db.commit()
+            return {"results": [], "message": f"Succès : {result.rowcount} ligne(s) affectée(s)."}
+            
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

@@ -1,68 +1,171 @@
+/* --- Structure des Cartes --- */
 .animal-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
-    padding: 20px 0;
+    margin-top: 20px;
 }
 
 .animal-card {
-    background: #ffffff;
+    background: white;
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    border: 1px solid #eee;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid #e2e8f0;
 }
 
-.edit-mode {
+.animal-card.expanded {
+    border-color: #3b82f6;
+}
+
+.card-header {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.edit-mode label {
+/* --- Historique & Timeline --- */
+.consult-history-container {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.history-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 5px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 1.5rem;
+    border-left: 2px solid #cbd5e1;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -7px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #3b82f6;
+}
+
+.is-future .timeline-marker {
+    border-color: #10b981;
+    background: #10b981;
+}
+
+/* FIX: Évite que la date et le statut soient collés */
+.consult-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.consult-date {
     font-size: 0.85rem;
     font-weight: bold;
-    color: #555;
-    margin-bottom: -5px;
+    color: #1e293b;
 }
 
-.edit-mode input {
+.status-badge {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+
+.badge-future { background: #dcfce7; color: #15803d; }
+.badge-past { background: #e0f2fe; color: #0369a1; }
+
+.consult-diagnostic {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #475569;
+    background: white;
     padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 0.95rem;
-}
-
-.input-row {
-    display: flex;
-    gap: 10px;
-}
-
-.input-field {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
+    border-radius: 4px;
+    border: 1px solid #f1f5f9;
 }
 
 .btn-group {
     display: flex;
     gap: 10px;
+    margin-top: 15px;
+}
+
+.prescription-list {
     margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
-.btn-save { background: #28a745; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; flex: 1; }
-.btn-cancel { background: #6c757d; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; flex: 1; }
-.btn-edit { background: #007bff; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px; }
-
-.btn-delete {
-    background: #e74c3c;
-    color: white;
-    border: none;
+.prescription-badge {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+    padding: 6px 10px;
     border-radius: 6px;
-    padding: 6px 14px;
-    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
 }
-.btn-delete:hover {
-    background: #c0392b;
+
+/* Mode Édition */
+.edit-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.input-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.edit-mode input {
+    padding: 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+/* Prescriptions */
+.prescription-list {
+    margin-top: 12px;
+    border-top: 1px dashed #cbd5e1;
+    padding-top: 8px;
+}
+
+.prescription-badge {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    color: #0369a1;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+}
+
+.physical-info {
+    display: flex;
+    gap: 20px;
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #475569;
 }
