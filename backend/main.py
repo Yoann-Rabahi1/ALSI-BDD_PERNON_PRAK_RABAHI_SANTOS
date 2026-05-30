@@ -619,6 +619,72 @@ async def execute_raw_query(request: QueryRequest, db: db_dependency):
             
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+@app.get("/admin/stats")
+async def get_admin_stats(db: db_dependency):
+    # Comptes simples pour le tableau de bord
+    nb_animaux = db.execute(text("SELECT COUNT(*) FROM animaux")).scalar()
+    nb_proprios = db.execute(text("SELECT COUNT(*) FROM proprietaires")).scalar()
+    nb_vetos = db.execute(text("SELECT COUNT(*) FROM veterinaires")).scalar()
+    nb_cliniques = db.execute(text("SELECT COUNT(*) FROM etablissements")).scalar()
+    
+    # Statistique pertinente : Top 3 des espèces les plus suivies (Exigence Statistique Globale)
+    query_top_especes = text("""
+        SELECT espece, COUNT(*) as count 
+        FROM animaux 
+        GROUP BY espece 
+        ORDER BY count DESC 
+        LIMIT 3
+    """)
+    top_especes = db.execute(query_top_especes).mappings().all()
+
+    return {
+        "counts": {
+            "animaux": nb_animaux,
+            "proprietaires": nb_proprios,
+            "veterinaires": nb_vetos,
+            "etablissements": nb_cliniques
+        },
+        "top_especes": top_especes
+    }
+
+
+@app.get("/{category}")
+async def get_all_from_category(category: str, db: db_dependency):
+    # Sécurité : on vérifie que la table demandée est autorisée
+    allowed_tables = ["animaux", "proprietaires", "veterinaires", "etablissements", "medicaments"]
+    
+    if category not in allowed_tables:
+        raise HTTPException(status_code=404, detail="Table non trouvée")
+    
+    query = text(f"SELECT * FROM {category}")
+    try:
+        result = db.execute(query).mappings().all()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/{category}/search")
+async def dynamic_search(category: str, column: str, db: db_dependency, q : str = "", ):
+    allowed_columns = {
+        "animaux": ["nom_animal", "espece", "race", "age", "id_animal"],
+        "proprietaires": ["nom", "prenom", "telephone", "id_proprietaire"],
+        "veterinaires": ["nom", "prenom", "telephone", "id_veterinaire"],
+        "etablissements": ["nom_etablissement", "ville"],
+        "medicaments": ["nom_medicament"]
+    }
+
+    if category not in allowed_columns or column not in allowed_columns[category]:
+        raise HTTPException(status_code=400, detail="Critère invalide")
+
+    # Si q est vide, on fait un SELECT * simple
+    if not q.strip():
+        query = text(f"SELECT * FROM {category}")
+        return db.execute(query).mappings().all()
+
+    # Sinon, on applique le filtre LIKE
+    query = text(f"SELECT * FROM {category} WHERE {column} LIKE :val")
+    return db.execute(query, {"val": f"%{q}%"}).mappings().all()
 
 if __name__ == "__main__":
     import uvicorn
