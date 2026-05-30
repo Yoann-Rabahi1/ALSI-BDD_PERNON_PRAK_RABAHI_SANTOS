@@ -1,0 +1,100 @@
+.presc-container {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed #e2e8f0;
+}
+
+.presc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.presc-header h4 {
+    font-size: 0.8rem;
+    color: #64748b;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.btn-add-inline {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.presc-item {
+    background: #f8fafc;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border-left: 3px solid #3b82f6;
+}
+
+.presc-med-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.presc-med-info strong {
+    font-size: 0.9rem;
+    color: #1e293b;
+}
+
+.presc-med-info span {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.presc-empty {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.presc-inline-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #eff6ff;
+    padding: 12px;
+    border-radius: 10px;
+}
+
+.presc-inline-form select,
+.presc-inline-form input {
+    padding: 8px;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.presc-form-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-confirm {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    flex: 1;
+    cursor: pointer;
+}
+
+.btn-cancel {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}

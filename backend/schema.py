@@ -151,11 +151,21 @@ class ConsultationOut(BaseModel):
 # MÉDICAMENT
 # ─────────────────────────────────────────────
 
+# Dans schemas.py
 class MedicamentBase(BaseModel):
-    nom_medicament: str
-    description: Optional[str] = None
-    prix_unitaire: float
-
-class MedicamentOut(MedicamentBase):
     id_medicament: int
-    model_config = ConfigDict(from_attributes=True)
+    nom_medicament: str
+    prix_unitaire: float
+    description: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class PrescriptionOut(BaseModel):
+    id_prescription: int
+    posologie: str
+    duree_traitement: str
+    medicament: MedicamentBase # C'est ici que la magie opère
+
+    class Config:
+        from_attributes = True

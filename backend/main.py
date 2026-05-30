@@ -11,14 +11,14 @@ from schema import *
 app = FastAPI(title="API Clinique Vétérinaire - ALSI61")
 models.Base.metadata.create_all(bind=engine)
 
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 db_dependency = Annotated[Session, Depends(get_db)]
 
 
@@ -381,6 +381,76 @@ async def get_consultations_veto(id_veto: int, db: db_dependency):
     except Exception as e:
         print(f"Erreur SQL: {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la récupération des données complexes.")
+    
+
+@app.get("/consultations/proprietaire/{id_proprio}")
+async def get_consultations_proprio(id_proprio: int, db: db_dependency):
+    # On cherche les consultations liées aux animaux appartenant à ce propriétaire
+    consultations = db.query(models.Consultation)\
+        .join(models.Animal)\
+        .filter(models.Animal.id_proprietaire == id_proprio)\
+        .options(joinedload(models.Consultation.animal), joinedload(models.Consultation.veterinaire))\
+        .all()
+
+    return [
+        {
+            "id_consult": c.id_consult,
+            "date_consult": c.date_consult.isoformat(),
+            "diagnostic": c.diagnostic,
+            "animal": {
+                "nom_animal": c.animal.nom_animal,
+                "espece": c.animal.espece
+            } if c.animal else None,
+            "veterinaire": {
+                "nom": c.veterinaire.nom,
+                "prenom": c.veterinaire.prenom
+            } if c.veterinaire else None
+        } for c in consultations
+    ]
+
+@app.put("/consultations/{id_consult}/diagnostic")
+async def update_diagnostic(id_consult: int, diagnostic_data: dict, db: db_dependency):
+    # On récupère la consultation
+    consultation = db.query(models.Consultation).filter(models.Consultation.id_consult == id_consult).first()
+    
+    if not consultation:
+        raise HTTPException(status_code=404, detail="Consultation non trouvée")
+    
+    # On met à jour le diagnostic
+    new_diag = diagnostic_data.get("diagnostic")
+    if not new_diag:
+        raise HTTPException(status_code=400, detail="Le diagnostic ne peut pas être vide")
+        
+    consultation.diagnostic = new_diag
+    db.commit()
+    
+    return {"status": "success", "message": "Diagnostic mis à jour", "diagnostic": new_diag}
+
+
+# --- ROUTES MÉDICAMENTS ---
+@app.get("/medicaments")
+async def get_all_medicaments(db: db_dependency):
+    return db.query(models.Medicament).all()
+
+# --- ROUTES PRESCRIPTIONS ---
+@app.post("/prescriptions")
+async def create_prescription(data: dict, db: db_dependency):
+    # On crée la liaison entre la consultation et le médicament
+    new_presc = models.Prescription(
+        id_consult=data.get("id_consult"),
+        id_medicament=data.get("id_medicament"),
+        posologie=data.get("posologie"),
+        duree_traitement=data.get("duree_traitement")
+    )
+    db.add(new_presc)
+    db.commit()
+    return {"status": "success"}
+
+@app.get("/consultations/{id_consult}/prescriptions", response_model=List[PrescriptionOut])
+async def get_prescriptions(id_consult: int, db: db_dependency):
+    return db.query(models.Prescription)\
+        .options(joinedload(models.Prescription.medicament))\
+        .filter(models.Prescription.id_consult == id_consult).all()
 
 if __name__ == "__main__":
     import uvicorn

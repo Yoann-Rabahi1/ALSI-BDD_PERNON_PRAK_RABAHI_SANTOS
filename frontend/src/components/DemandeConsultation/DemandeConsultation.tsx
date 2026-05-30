@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../../api/axiosConfig';
+import './DemandeConsultation.css'
 
 interface Animal {
     id_animal: number;

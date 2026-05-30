@@ -4,6 +4,7 @@ import AddAnimal from '../addAnimal/AddAnimal';
 import AnimalList from '../AnimalList/AnimalList';
 import DemandeConsultation from '../DemandeConsultation/DemandeConsultation';
 import ConsultationList from '../ConsultationList/ConsultationList';
+import ConsultationListProprio from '../ConsultationProprio/ConsultationProprio'; // Import du nouveau composant
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -21,20 +22,12 @@ const Dashboard = () => {
         const parsed = JSON.parse(savedUser);
         setUser(parsed);
 
-        // Récupère l'id_proprietaire ou id_veterinaire depuis le profil
-        if (parsed.has_profile && parsed.id_user) {
-            if (parsed.role === 'client') {
-                import('../../api/axiosConfig').then(({ default: api }) => {
-                    api.get(`/proprietaires/me/${parsed.id_user}`)
-                        .then(r => setIdProprio(r.data.id_proprietaire))
-                        .catch(() => {});
-                });
-            } else if (parsed.role === 'veto') {
-                import('../../api/axiosConfig').then(({ default: api }) => {
-                    api.get(`/veterinaires/me/${parsed.id_user}`)
-                        .then(r => setIdVeto(r.data.id_veterinaire))
-                        .catch(() => {});
-                });
+        // Récupération simplifiée des IDs (déjà présents dans l'objet user suite à l'optimisation du login)
+        if (parsed.has_profile) {
+            if (parsed.role === 'client' && parsed.id_proprietaire) {
+                setIdProprio(parsed.id_proprietaire);
+            } else if (parsed.role === 'veto' && parsed.id_veterinaire) {
+                setIdVeto(parsed.id_veterinaire);
             }
         }
     }, [navigate]);
@@ -121,7 +114,6 @@ const Dashboard = () => {
                     {/* ── ZONE PROPRIÉTAIRE ── */}
                     {user.role === 'client' && user.has_profile && (
                         <div className="owner-layout">
-                            {/* Ligne du haut : ajouter animal + demander consultation */}
                             <div className="grid-cards">
                                 <AddAnimal onAnimalAdded={handleAnimalAdded} />
                                 {idProprio && (
@@ -132,8 +124,17 @@ const Dashboard = () => {
                                 )}
                             </div>
 
+                            {/* Section Historique/Consultations pour le proprio */}
+                            <div className="full-width-section">
+                                <h2>Historique des consultations</h2>
+                                {idProprio && (
+                                    <ConsultationListProprio idProprio={idProprio} />
+                                )}
+                            </div>
+
                             {/* Liste des animaux */}
                             <div className="full-width-section">
+                                <h2>Mes Animaux</h2>
                                 <AnimalList refreshKey={animalRefreshKey} />
                             </div>
                         </div>
@@ -142,12 +143,15 @@ const Dashboard = () => {
                     {/* ── ZONE VÉTÉRINAIRE ── */}
                     {user.role === 'veto' && user.has_profile && (
                         <div className="veto-layout">
-                            {idVeto && (
-                                <ConsultationList
-                                    idVeto={idVeto}
-                                    refreshKey={consultRefreshKey}
-                                />
-                            )}
+                            <div className="full-width-section">
+                                <h2>Calendrier des soins</h2>
+                                {idVeto && (
+                                    <ConsultationList
+                                        idVeto={idVeto}
+                                        refreshKey={consultRefreshKey}
+                                    />
+                                )}
+                            </div>
                         </div>
                     )}
 
