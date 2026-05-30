@@ -3,7 +3,7 @@ import Login from "./components/auth/Login";
 import Signup from "./components/auth/Signup";
 import RegisterProfile from "./components/registerTunnel/RegisterProfile"; 
 import Dashboard from "./components/dashboard/Dashboard";
-import AdminConsole from "./components/AdminConsole/AdminConsole"; 
+import AdminPannel from "./components/AdminPannel/AdminPannel"; 
 import type { JSX } from 'react';
 
 // Composant de sécurité pour protéger la route Admin
@@ -41,7 +41,7 @@ function App() {
             path="/admin" 
             element={
                 <AdminRoute>
-                    <AdminConsole />
+                    <AdminPannel />
                 </AdminRoute>
             } 
         />
