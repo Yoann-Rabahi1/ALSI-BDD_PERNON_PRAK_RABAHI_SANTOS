@@ -1,79 +1,72 @@
+DROP TRIGGER IF EXISTS block_delete_user;
+
+DROP TRIGGER IF EXISTS block_delete_prescription;
+
+DROP TRIGGER IF EXISTS block_delete_consultation;
+
+DROP TRIGGER IF EXISTS before_veterinaire_delete;
+
+DROP TRIGGER IF EXISTS before_medoc_delete;
+
+DROP TRIGGER IF EXISTS before_etab_delete;
+
+DROP TRIGGER IF EXISTS before_animal_delete;
+
+DELIMITER //
+
 CREATE TRIGGER block_delete_user
 BEFORE DELETE ON compte_users
 FOR EACH ROW
 BEGIN
-    SIGNAL SQLSTATE '45000' 
+    SIGNAL SQLSTATE '45000'
     SET MESSAGE_TEXT = 'Interdit : Utilisez la colonne est_actif pour désactiver un compte.';
-END; //
-DELIMITER ;
+END//
 
-DELIMITER //
+
 CREATE TRIGGER block_delete_prescription
 BEFORE DELETE ON prescriptions
 FOR EACH ROW
 BEGIN
-    SIGNAL SQLSTATE '45000' 
+    SIGNAL SQLSTATE '45000'
     SET MESSAGE_TEXT = 'Interdit : Les prescriptions médicales ne peuvent pas être supprimées.';
-END; //
-DELIMITER ;
+END//
 
-DELIMITER //
 CREATE TRIGGER block_delete_consultation
 BEFORE DELETE ON consultations
 FOR EACH ROW
 BEGIN
-    SIGNAL SQLSTATE '45000' 
+    SIGNAL SQLSTATE '45000'
     SET MESSAGE_TEXT = 'Suppression interdite : les archives médicales doivent être conservées.';
-END;
-//
-DELIMITER ;
+END//
 
-CREATE TRIGGER block_delete_user
-BEFORE DELETE ON compte_users
-FOR EACH ROW
-BEGIN
-    SIGNAL SQLSTATE '45000' 
-    SET MESSAGE_TEXT = 'Interdit : Utilisez la colonne est_actif pour désactiver un compte.';
-END; //
-DELIMITER ;
-
-
-DELIMITER //
 CREATE TRIGGER before_veterinaire_delete
 BEFORE DELETE ON veterinaires
 FOR EACH ROW
 BEGIN
-    SIGNAL SQLSTATE '45000' 
+    SIGNAL SQLSTATE '45000'
     SET MESSAGE_TEXT = 'Suppression impossible : Le vétérinaire est lié à des archives médicales.';
-END //
-DELIMITER ;
+END//
 
-DELIMITER //
 CREATE TRIGGER before_medoc_delete
 BEFORE DELETE ON medicaments
 FOR EACH ROW
 BEGIN
-    SIGNAL SQLSTATE '45000' 
+    SIGNAL SQLSTATE '45000'
     SET MESSAGE_TEXT = 'Suppression impossible : Le medicament est lié à des archives médicales.';
-END //
-DELIMITER ;
+END//
 
-DELIMITER //
 CREATE TRIGGER before_etab_delete
 BEFORE DELETE ON etablissements
 FOR EACH ROW
 BEGIN
     SIGNAL SQLSTATE '45000'
     SET MESSAGE_TEXT = 'Interdit : Utilisez la colonne est_actif pour désactiver un compte.';
-END //
-DELIMITER;
+END//
 
-DELIMITER //
 CREATE TRIGGER before_animal_delete
 BEFORE DELETE ON animaux
 FOR EACH ROW
 BEGIN
     SIGNAL SQLSTATE '45000'
     SET MESSAGE_TEXT = 'Interdit : Utilisez la colonne est_actif pour désactiver un compte.';
-END //
-DELIMITER;
+END//
