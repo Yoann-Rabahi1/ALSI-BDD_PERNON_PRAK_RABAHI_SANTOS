@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS prescriptions (
     id_medicament INT NOT NULL,
     posologie VARCHAR(255),
     duree_traitement VARCHAR(50),
-    FOREIGN KEY (id_consult) REFERENCES consultations (id_consult) ON DELETE SET NULL,
+    FOREIGN KEY (id_consult) REFERENCES consultations (id_consult) ON DELETE RESTRICT,
     FOREIGN KEY (id_medicament) REFERENCES medicaments (id_medicament) ON DELETE RESTRICT
 ) ENGINE = InnoDB;
+
