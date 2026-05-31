@@ -24,12 +24,10 @@ CREATE TABLE IF NOT EXISTS animaux (
     espece VARCHAR(50),
     race VARCHAR(50),
     age INT,
-    poids_kg DECIMAL(5,2) DEFAULT 0.00,
+    poids_kg DECIMAL(5, 2) DEFAULT 0.00,
     id_proprietaire INT NOT NULL,
-    FOREIGN KEY (id_proprietaire) REFERENCES proprietaire(id_proprietaire) ON DELETE RESTRICT,
-
-    
-) ENGINE=InnoDB;
+    FOREIGN KEY (id_proprietaire) REFERENCES proprietaire (id_proprietaire) ON DELETE RESTRICT
+) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS medicaments (
     id_medicament INT PRIMARY KEY AUTO_INCREMENT,
@@ -54,9 +52,8 @@ CREATE TABLE IF NOT EXISTS proprietaires (
     prenom VARCHAR(75) NOT NULL,
     telephone VARCHAR(20),
     id_user INT NOT NULL,
-    FOREIGN KEY (id_user) REFERENCES compte_users(id_user) ON DELETE RESTRICT
-) ENGINE=InnoDB;
-
+    FOREIGN KEY (id_user) REFERENCES compte_users (id_user) ON DELETE RESTRICT
+) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS consultations (
     id_consult INT PRIMARY KEY AUTO_INCREMENT,
@@ -77,4 +74,3 @@ CREATE TABLE IF NOT EXISTS prescriptions (
     FOREIGN KEY (id_consult) REFERENCES consultations (id_consult) ON DELETE RESTRICT,
     FOREIGN KEY (id_medicament) REFERENCES medicaments (id_medicament) ON DELETE RESTRICT
 ) ENGINE = InnoDB;
-
