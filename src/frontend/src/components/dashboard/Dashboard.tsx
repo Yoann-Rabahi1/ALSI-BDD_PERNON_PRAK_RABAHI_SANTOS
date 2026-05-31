@@ -126,6 +126,7 @@ const Dashboard = () => {
                                             <DemandeConsultation 
                                                 idProprio={idProprio} 
                                                 onConsultationAdded={handleConsultationAdded} 
+                                                refreshKey={animalRefreshKey}
                                             />
                                         )}
                                     </div>

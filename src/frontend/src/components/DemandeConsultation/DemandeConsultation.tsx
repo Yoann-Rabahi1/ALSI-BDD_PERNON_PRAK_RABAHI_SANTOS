@@ -23,9 +23,10 @@ interface Veterinaire {
 interface Props {
     idProprio: number;
     onConsultationAdded?: () => void;
+    refreshKey?: number;
 }
 
-const DemandeConsultation = ({ idProprio, onConsultationAdded }: Props) => {
+const DemandeConsultation = ({ idProprio, onConsultationAdded, refreshKey = 0 }: Props) => {
     const [animaux, setAnimaux] = useState<Animal[]>([]);
     const [villes, setVilles] = useState<string[]>([]);
     const [villeSelectionnee, setVilleSelectionnee] = useState('');
@@ -57,7 +58,7 @@ const DemandeConsultation = ({ idProprio, onConsultationAdded }: Props) => {
             }
         };
         fetchInit();
-    }, [idProprio]);
+    }, [idProprio, refreshKey]);
 
     // Charge les vétérinaires quand une ville est choisie
     useEffect(() => {

@@ -16,8 +16,9 @@ const Login = () => {
     useEffect(() => {
         if (location.state?.message) {
             setSuccessMsg(location.state.message);
+            navigate(location.pathname, { replace: true, state: {} });
         }
-    }, [location.state]);
+    }, [location.pathname, location.state, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
