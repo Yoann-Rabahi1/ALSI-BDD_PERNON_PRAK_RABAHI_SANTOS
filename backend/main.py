@@ -175,6 +175,26 @@ async def deactivate_user(id_user: int, db: db_dependency):
     return {"status": "success", "message": f"Le compte {id_user} a été désactivé."}
 
 
+@app.patch("/users/reactiver/{id_user}")
+async def reactivate_user(id_user: int, db: db_dependency):
+    user = db.query(models.CompteUser).filter(models.CompteUser.id_user == id_user).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+
+    user.est_actif = True
+
+    if user.role == "client":
+        proprio = db.query(models.Proprietaire).filter(models.Proprietaire.id_user == id_user).first()
+        if proprio:
+            db.query(models.Animal).filter(
+                models.Animal.id_proprietaire == proprio.id_proprietaire
+            ).update({models.Animal.est_actif: True}, synchronize_session=False)
+
+    db.commit()
+
+    return {"status": "success", "message": f"Le compte {id_user} a été réactivé."}
+
+
 # ─────────────────────────────────────────────
 # COMPTE USER (CRUD de base)
 # ─────────────────────────────────────────────
@@ -347,6 +367,20 @@ async def delete_etablissement(id_etablissement: int, db: db_dependency):
     
     return {"status": "success", "message": "Établissement désactivé sans suppression physique."}
 
+
+@app.patch("/etablissements/reactiver/{id_etablissement}")
+async def reactivate_etablissement(id_etablissement: int, db: db_dependency):
+    etablissement = db.query(models.Etablissement).filter(
+        models.Etablissement.id_etablissement == id_etablissement
+    ).first()
+    if not etablissement:
+        raise HTTPException(status_code=404, detail="Établissement introuvable")
+
+    etablissement.est_actif = True
+    db.commit()
+
+    return {"status": "success", "message": "Établissement réactivé."}
+
 # ─────────────────────────────────────────────
 # VÉTÉRINAIRES
 # ─────────────────────────────────────────────
@@ -464,6 +498,20 @@ async def delete_animal(animal_id: int, db: db_dependency):
         raise HTTPException(status_code=404, detail="Animal introuvable")
     db_animal.est_actif = False
     db.commit()
+
+
+@app.patch("/animaux/reactiver/{animal_id}")
+async def reactivate_animal(animal_id: int, db: db_dependency):
+    db_animal = db.query(models.Animal).filter(
+        models.Animal.id_animal == animal_id
+    ).first()
+    if not db_animal:
+        raise HTTPException(status_code=404, detail="Animal introuvable")
+
+    db_animal.est_actif = True
+    db.commit()
+
+    return {"status": "success", "message": "Animal réactivé."}
 
 
 @app.post("/consultations", response_model=ConsultationOut, status_code=201)
@@ -707,6 +755,13 @@ async def get_all_from_category(category: str, db: db_dependency):
             FROM proprietaires p
             JOIN compte_users cu ON cu.id_user = p.id_user
         """)
+    elif category == "animaux":
+        query = text("""
+            SELECT a.*, cu.est_actif AS proprietaire_actif
+            FROM animaux a
+            LEFT JOIN proprietaires p ON p.id_proprietaire = a.id_proprietaire
+            LEFT JOIN compte_users cu ON cu.id_user = p.id_user
+        """)
     elif category == "veterinaires":
         query = text("""
             SELECT v.*, cu.est_actif AS est_actif
@@ -742,6 +797,13 @@ async def dynamic_search(category: str, column: str, db: db_dependency, q : str 
                 FROM proprietaires p
                 JOIN compte_users cu ON cu.id_user = p.id_user
             """)
+        elif category == "animaux":
+            query = text("""
+                SELECT a.*, cu.est_actif AS proprietaire_actif
+                FROM animaux a
+                LEFT JOIN proprietaires p ON p.id_proprietaire = a.id_proprietaire
+                LEFT JOIN compte_users cu ON cu.id_user = p.id_user
+            """)
         elif category == "veterinaires":
             query = text("""
                 SELECT v.*, cu.est_actif AS est_actif
@@ -759,6 +821,14 @@ async def dynamic_search(category: str, column: str, db: db_dependency, q : str 
             FROM proprietaires p
             JOIN compte_users cu ON cu.id_user = p.id_user
             WHERE p.{column} LIKE :val
+        """)
+    elif category == "animaux":
+        query = text(f"""
+            SELECT a.*, cu.est_actif AS proprietaire_actif
+            FROM animaux a
+            LEFT JOIN proprietaires p ON p.id_proprietaire = a.id_proprietaire
+            LEFT JOIN compte_users cu ON cu.id_user = p.id_user
+            WHERE a.{column} LIKE :val
         """)
     elif category == "veterinaires":
         query = text(f"""

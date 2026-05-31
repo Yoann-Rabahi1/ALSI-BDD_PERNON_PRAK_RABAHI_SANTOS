@@ -242,6 +242,19 @@ button:hover { opacity: 0.9; }
     background: #dc2626;
 }
 
+.reactivate-btn {
+    background: #16a34a;
+    color: #ffffff;
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.reactivate-btn:hover {
+    background: #15803d;
+}
+
 .delete-unavailable {
     color: var(--text-muted);
     font-size: 0.9rem;

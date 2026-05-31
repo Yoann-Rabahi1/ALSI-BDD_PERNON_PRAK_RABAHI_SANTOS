@@ -19,26 +19,25 @@ const AdminDashboard = () => {
         medicaments: [{ label: "Nom Médicament", val: "nom_medicament" }]
     };
 
-    const deleteActions: Record<string, { label: string; method: 'delete' | 'patch'; getUrl: (item: any) => string }> = {
+    const rowActions: Record<string, {
+        deactivate: { method: 'delete' | 'patch'; getUrl: (item: any) => string };
+        reactivate: { method: 'patch'; getUrl: (item: any) => string };
+    }> = {
         animaux: {
-            label: "Désactiver",
-            method: "delete",
-            getUrl: (item) => `/animaux/${item.id_animal}`,
+            deactivate: { method: "delete", getUrl: (item) => `/animaux/${item.id_animal}` },
+            reactivate: { method: "patch", getUrl: (item) => `/animaux/reactiver/${item.id_animal}` },
         },
         etablissements: {
-            label: "Désactiver",
-            method: "delete",
-            getUrl: (item) => `/etablissements/${item.id_etablissement}`,
+            deactivate: { method: "delete", getUrl: (item) => `/etablissements/${item.id_etablissement}` },
+            reactivate: { method: "patch", getUrl: (item) => `/etablissements/reactiver/${item.id_etablissement}` },
         },
         proprietaires: {
-            label: "Désactiver",
-            method: "patch",
-            getUrl: (item) => `/users/desactiver/${item.id_user}`,
+            deactivate: { method: "patch", getUrl: (item) => `/users/desactiver/${item.id_user}` },
+            reactivate: { method: "patch", getUrl: (item) => `/users/reactiver/${item.id_user}` },
         },
         veterinaires: {
-            label: "Désactiver",
-            method: "patch",
-            getUrl: (item) => `/users/desactiver/${item.id_user}`,
+            deactivate: { method: "patch", getUrl: (item) => `/users/desactiver/${item.id_user}` },
+            reactivate: { method: "patch", getUrl: (item) => `/users/reactiver/${item.id_user}` },
         },
     };
 
@@ -82,15 +81,20 @@ const AdminDashboard = () => {
         loadAllData();
     };
 
-    const handleDelete = async (item: any) => {
-        const action = deleteActions[category];
-        if (!action) {
+    const handleToggleActive = async (item: any) => {
+        const actions = rowActions[category];
+        if (!actions) {
             setActionMessage("La suppression n'est pas disponible pour cette table.");
             return;
         }
 
+        const isActive = item.est_actif === undefined || item.est_actif === null
+            ? true
+            : item.est_actif === true || item.est_actif === 1;
+        const action = isActive ? actions.deactivate : actions.reactivate;
+
         const confirmed = window.confirm(
-            `Confirmer la désactivation de cette ligne dans ${category.toUpperCase()} ?`
+            `Confirmer la ${isActive ? 'désactivation' : 'réactivation'} de cette ligne dans ${category.toUpperCase()} ?`
         );
         if (!confirmed) {
             return;
@@ -102,10 +106,10 @@ const AdminDashboard = () => {
             } else {
                 await api.delete(action.getUrl(item));
             }
-            setActionMessage("Entrée désactivée avec succès.");
+            setActionMessage(`Entrée ${isActive ? 'désactivée' : 'réactivée'} avec succès.`);
             await loadAllData();
         } catch (err: any) {
-            setActionMessage(err.response?.data?.detail || "Impossible de désactiver cette entrée.");
+            setActionMessage(err.response?.data?.detail || `Impossible de ${isActive ? 'désactiver' : 'réactiver'} cette entrée.`);
         }
     };
 
@@ -117,7 +121,15 @@ const AdminDashboard = () => {
     });
 
     const columns = visibleData.length > 0 ? Object.keys(visibleData[0]) : [];
-    const hasDeleteAction = Boolean(deleteActions[category]);
+    const hasRowAction = Boolean(rowActions[category]);
+    const canReactivateAnimal = (item: any) => {
+        const isAnimalInactive = item.est_actif === false || item.est_actif === 0;
+        const ownerActive = item.proprietaire_actif === undefined || item.proprietaire_actif === null
+            ? true
+            : item.proprietaire_actif === true || item.proprietaire_actif === 1;
+
+        return isAnimalInactive && ownerActive;
+    };
 
     return (
         <div className="admin-container">
@@ -185,7 +197,7 @@ const AdminDashboard = () => {
                             checked={showInactive}
                             onChange={(e) => setShowInactive(e.target.checked)}
                         />
-                        <span>Afficher non actifs</span>
+                        <span>Non actifs</span>
                     </label>
                     <button className="reset-btn" onClick={handleReset}>🔄</button>
                 </div>
@@ -206,10 +218,17 @@ const AdminDashboard = () => {
                             <tr key={idx}>
                                 {columns.map(col => <td key={col}>{String(item[col] ?? '—')}</td>)}
                                 <td>
-                                    {hasDeleteAction ? (
-                                        <button className="delete-btn" onClick={() => handleDelete(item)}>
-                                            Désactiver
-                                        </button>
+                                    {hasRowAction ? (
+                                        category === 'animaux' && (item.est_actif === false || item.est_actif === 0) && !canReactivateAnimal(item) ? (
+                                            <span className="delete-unavailable">Propriétaire inactif</span>
+                                        ) : (
+                                            <button
+                                                className={item.est_actif === false || item.est_actif === 0 ? "reactivate-btn" : "delete-btn"}
+                                                onClick={() => handleToggleActive(item)}
+                                            >
+                                                {item.est_actif === false || item.est_actif === 0 ? "Réactiver" : "Désactiver"}
+                                            </button>
+                                        )
                                     ) : (
                                         <span className="delete-unavailable">—</span>
                                     )}
