@@ -1,6 +1,6 @@
 # VetoApp
 
-VetoApp est une application web de gestion pour une **clinique vétérinaire**. Elle centralise la gestion des comptes, des profils, des animaux, des consultations et des prescriptions.
+VetoApp est une application web de gestion pour une chaîne de **cliniques vétérinaires**. Elle centralise la gestion des comptes, des profils, des animaux, des consultations et des prescriptions.
 
 ## Technologies utilisées
 
