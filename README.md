@@ -75,7 +75,7 @@ python -m venv .venv
 Activez ensuite l’environnement virtuel sur Windows :
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate
 ```
 
 Installez les dépendances Python :

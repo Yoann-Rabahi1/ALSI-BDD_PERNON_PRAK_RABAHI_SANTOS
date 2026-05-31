@@ -59,10 +59,10 @@ GROUP BY espece;
 -- R11 : Animaux dont le poids est supérieur à la moyenne globale
 SELECT nom_animal, espece, poids_kg
 FROM animaux
-WHERE poids_kg > (
-    SELECT AVG(poids_kg)
+WHERE id_animal IN (
+    SELECT id_animal
     FROM animaux
-    WHERE poids_kg IS NOT NULL
+    WHERE poids_kg > (SELECT AVG(poids_kg) FROM animaux)
 );
 
 -- R12 : Animaux dont toutes les consultations ont au moins une prescription
@@ -92,19 +92,23 @@ GROUP BY v.id_veterinaire, v.nom, v.prenom
 ORDER BY nombre_consultations DESC, v.nom ASC, v.prenom ASC;
 
 -- R14 : Vétérinaires ayant consulté au moins deux espèces différentes
-SELECT v.nom, v.prenom, COUNT(DISTINCT a.espece) AS nombre_especes
+SELECT v.nom, v.prenom
 FROM veterinaires v
-INNER JOIN consultations c ON v.id_veterinaire = c.id_veterinaire
-INNER JOIN animaux a ON c.id_animal = a.id_animal
-GROUP BY v.id_veterinaire, v.nom, v.prenom
-HAVING COUNT(DISTINCT a.espece) >= 2;
+WHERE v.id_veterinaire IN (
+    SELECT c.id_veterinaire
+    FROM consultations c
+    JOIN animaux a ON c.id_animal = a.id_animal
+    GROUP BY c.id_veterinaire
+    HAVING COUNT(DISTINCT a.espece) >= 2
+);
 
 -- R15 : Animal le plus lourd par espèce, avec égalités affichées
 SELECT a.espece, a.nom_animal, a.poids_kg
 FROM animaux a
-WHERE a.poids_kg = (
-    SELECT MAX(a2.poids_kg)
+WHERE NOT EXISTS (
+    SELECT 1
     FROM animaux a2
     WHERE a2.espece = a.espece
+    AND a2.poids_kg > a.poids_kg
 )
 ORDER BY a.espece;
