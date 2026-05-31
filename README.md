@@ -1,6 +1,6 @@
 # VetoApp
 
-VetoApp est une application web de gestion pour une **clinique vétérinaire**. Elle centralise la gestion des comptes, des profils, des animaux, des consultations et des prescriptions.
+VetoApp est une application web de gestion pour une chaîne de **cliniques vétérinaires**. Elle centralise la gestion des comptes, des profils, des animaux, des consultations et des prescriptions.
 
 ## Technologies utilisées
 
@@ -20,7 +20,7 @@ VetoApp est une application web de gestion pour une **clinique vétérinaire**. 
 Si vous partez de zéro, installez d’abord les éléments suivants :
 
 - Python 3.12 ou plus récent
-- Node.js 20 ou plus récent
+- [Node.js](https://nodejs.org/fr/download) 20 ou plus récent
 - MySQL 8 ou MariaDB compatible
 - Un éditeur de code comme Visual Studio Code
 

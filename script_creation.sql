@@ -18,6 +18,26 @@ CREATE TABLE IF NOT EXISTS etablissements (
     est_actif BOOLEAN DEFAULT 1
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS veterinaires (
+    id_veterinaire INT PRIMARY KEY AUTO_INCREMENT,
+    nom VARCHAR(50) NOT NULL,
+    prenom VARCHAR(50) NOT NULL,
+    id_etablissement INT NULL,
+    id_user INT NOT NULL,
+    telephone VARCHAR(20),
+    FOREIGN KEY (id_etablissement) REFERENCES etablissements (id_etablissement) ON DELETE RESTRICT,
+    FOREIGN KEY (id_user) REFERENCES compte_users (id_user) ON DELETE RESTRICT
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS proprietaires (
+    id_proprietaire INT PRIMARY KEY AUTO_INCREMENT,
+    nom VARCHAR(75) NOT NULL,
+    prenom VARCHAR(75) NOT NULL,
+    telephone VARCHAR(20),
+    id_user INT NOT NULL,
+    FOREIGN KEY (id_user) REFERENCES compte_users (id_user) ON DELETE RESTRICT
+) ENGINE = InnoDB;
+
 CREATE TABLE IF NOT EXISTS animaux (
     id_animal INT PRIMARY KEY AUTO_INCREMENT,
     nom_animal VARCHAR(75) NOT NULL,
@@ -26,10 +46,8 @@ CREATE TABLE IF NOT EXISTS animaux (
     age INT CHECK(age>=0),
     poids_kg DECIMAL(5,2) DEFAULT 0.00 CHECK (poids_kg >= 0),
     id_proprietaire INT NOT NULL,
-    FOREIGN KEY (id_proprietaire) REFERENCES proprietaire(id_proprietaire) ON DELETE RESTRICT,
-
-    
-) ENGINE=InnoDB;
+    FOREIGN KEY (id_proprietaire) REFERENCES proprietaires (id_proprietaire) ON DELETE RESTRICT
+) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS medicaments (
     id_medicament INT PRIMARY KEY AUTO_INCREMENT,
@@ -37,26 +55,6 @@ CREATE TABLE IF NOT EXISTS medicaments (
     description TEXT,
     prix_unitaire DECIMAL(10,2) NOT NULL DEFAULT 0.00 CHECK (prix_unitaire >= 0)
 ) ENGINE = InnoDB;
-
-CREATE TABLE IF NOT EXISTS veterinaires (
-    id_veterinaire INT PRIMARY KEY AUTO_INCREMENT,
-    nom VARCHAR(50) NOT NULL,
-    prenom VARCHAR(50) NOT NULL,
-    id_etablissement INT NULL,
-    id_user INT NOT NULL,
-    FOREIGN KEY (id_etablissement) REFERENCES etablissements (id_etablissement) ON DELETE RESTRICT,
-    FOREIGN KEY (id_user) REFERENCES compte_users (id_user) ON DELETE RESTRICT
-) ENGINE = InnoDB;
-
-CREATE TABLE IF NOT EXISTS proprietaires (
-    id_proprio INT PRIMARY KEY AUTO_INCREMENT,
-    nom VARCHAR(75) NOT NULL,
-    prenom VARCHAR(75) NOT NULL,
-    telephone VARCHAR(20),
-    id_user INT NOT NULL,
-    FOREIGN KEY (id_user) REFERENCES compte_users(id_user) ON DELETE RESTRICT
-) ENGINE=InnoDB;
-
 
 CREATE TABLE IF NOT EXISTS consultations (
     id_consult INT PRIMARY KEY AUTO_INCREMENT,
@@ -77,4 +75,3 @@ CREATE TABLE IF NOT EXISTS prescriptions (
     FOREIGN KEY (id_consult) REFERENCES consultations (id_consult) ON DELETE RESTRICT,
     FOREIGN KEY (id_medicament) REFERENCES medicaments (id_medicament) ON DELETE RESTRICT
 ) ENGINE = InnoDB;
-

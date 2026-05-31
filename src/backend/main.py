@@ -744,7 +744,7 @@ async def get_admin_stats(db: db_dependency):
 @app.get("/{category}")
 async def get_all_from_category(category: str, db: db_dependency):
     # Sécurité : on vérifie que la table demandée est autorisée
-    allowed_tables = ["animaux", "proprietaires", "veterinaires", "etablissements", "medicaments"]
+    allowed_tables = ["animaux", "proprietaires", "veterinaires", "etablissements", "medicaments", "consultations", "prescriptions"]
     
     if category not in allowed_tables:
         raise HTTPException(status_code=404, detail="Table non trouvée")
@@ -768,6 +768,31 @@ async def get_all_from_category(category: str, db: db_dependency):
             FROM veterinaires v
             JOIN compte_users cu ON cu.id_user = v.id_user
         """)
+    elif category == "consultations":
+        query = text("""
+            SELECT
+                c.*,
+                a.nom_animal,
+                a.espece,
+                a.race,
+                v.nom AS veterinaire_nom,
+                v.prenom AS veterinaire_prenom
+            FROM consultations c
+            LEFT JOIN animaux a ON a.id_animal = c.id_animal
+            LEFT JOIN veterinaires v ON v.id_veterinaire = c.id_veterinaire
+            ORDER BY c.date_consult DESC
+        """)
+    elif category == "prescriptions":
+        query = text("""
+            SELECT
+                p.*,
+                m.nom_medicament,
+                c.date_consult
+            FROM prescriptions p
+            LEFT JOIN medicaments m ON m.id_medicament = p.id_medicament
+            LEFT JOIN consultations c ON c.id_consult = p.id_consult
+            ORDER BY p.id_prescription DESC
+        """)
     else:
         query = text(f"SELECT * FROM {category}")
     try:
@@ -783,7 +808,9 @@ async def dynamic_search(category: str, column: str, db: db_dependency, q : str 
         "proprietaires": ["nom", "prenom", "telephone", "id_proprietaire"],
         "veterinaires": ["nom", "prenom", "telephone", "id_veterinaire"],
         "etablissements": ["nom_etablissement", "ville"],
-        "medicaments": ["nom_medicament"]
+        "medicaments": ["nom_medicament"],
+        "consultations": ["id_consult", "diagnostic", "date_consult", "id_animal", "id_veterinaire"],
+        "prescriptions": ["id_prescription", "posologie", "duree_traitement", "id_consult", "id_medicament"]
     }
 
     if category not in allowed_columns or column not in allowed_columns[category]:
@@ -809,6 +836,31 @@ async def dynamic_search(category: str, column: str, db: db_dependency, q : str 
                 SELECT v.*, cu.est_actif AS est_actif
                 FROM veterinaires v
                 JOIN compte_users cu ON cu.id_user = v.id_user
+            """)
+        elif category == "consultations":
+            query = text("""
+                SELECT
+                    c.*,
+                    a.nom_animal,
+                    a.espece,
+                    a.race,
+                    v.nom AS veterinaire_nom,
+                    v.prenom AS veterinaire_prenom
+                FROM consultations c
+                LEFT JOIN animaux a ON a.id_animal = c.id_animal
+                LEFT JOIN veterinaires v ON v.id_veterinaire = c.id_veterinaire
+                ORDER BY c.date_consult DESC
+            """)
+        elif category == "prescriptions":
+            query = text("""
+                SELECT
+                    p.*,
+                    m.nom_medicament,
+                    c.date_consult
+                FROM prescriptions p
+                LEFT JOIN medicaments m ON m.id_medicament = p.id_medicament
+                LEFT JOIN consultations c ON c.id_consult = p.id_consult
+                ORDER BY p.id_prescription DESC
             """)
         else:
             query = text(f"SELECT * FROM {category}")
@@ -836,6 +888,33 @@ async def dynamic_search(category: str, column: str, db: db_dependency, q : str 
             FROM veterinaires v
             JOIN compte_users cu ON cu.id_user = v.id_user
             WHERE v.{column} LIKE :val
+        """)
+    elif category == "consultations":
+        query = text(f"""
+            SELECT
+                c.*,
+                a.nom_animal,
+                a.espece,
+                a.race,
+                v.nom AS veterinaire_nom,
+                v.prenom AS veterinaire_prenom
+            FROM consultations c
+            LEFT JOIN animaux a ON a.id_animal = c.id_animal
+            LEFT JOIN veterinaires v ON v.id_veterinaire = c.id_veterinaire
+            WHERE CAST(c.{column} AS CHAR) LIKE :val
+            ORDER BY c.date_consult DESC
+        """)
+    elif category == "prescriptions":
+        query = text(f"""
+            SELECT
+                p.*,
+                m.nom_medicament,
+                c.date_consult
+            FROM prescriptions p
+            LEFT JOIN medicaments m ON m.id_medicament = p.id_medicament
+            LEFT JOIN consultations c ON c.id_consult = p.id_consult
+            WHERE CAST(p.{column} AS CHAR) LIKE :val
+            ORDER BY p.id_prescription DESC
         """)
     else:
         query = text(f"SELECT * FROM {category} WHERE {column} LIKE :val")
