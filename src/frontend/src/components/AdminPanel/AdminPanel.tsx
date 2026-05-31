@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import AdminDashboard from '../AdminDashboard/AdminDashboard';
 import AdminConsole from '../AdminConsole/AdminConsole';
-import '../AdminPannel/AdminPannel.css';
+import '../AdminPanel/AdminPanel.css';
 
 const AdminPanel = () => {
     const [activeTab, setActiveTab] = useState<'stats' | 'manage'>('stats');
