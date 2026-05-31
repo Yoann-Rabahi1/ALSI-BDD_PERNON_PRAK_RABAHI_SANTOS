@@ -57,3 +57,23 @@ BEGIN
     SET MESSAGE_TEXT = 'Suppression impossible : Le medicament est lié à des archives médicales.';
 END //
 DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER before_etab_delete
+BEFORE DELETE ON etablissements
+FOR EACH ROW
+BEGIN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Interdit : Utilisez la colonne est_actif pour désactiver un compte.';
+END //
+DELIMITER;
+
+DELIMITER //
+CREATE TRIGGER before_animal_delete
+BEFORE DELETE ON animaux
+FOR EACH ROW
+BEGIN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Interdit : Utilisez la colonne est_actif pour désactiver un compte.';
+END //
+DELIMITER;
