@@ -141,8 +141,6 @@ const ProfilVeto = ({ userId, onClose, onSaved }: Props) => {
         </div>
     );
 
-    const etabSelectionne = etablissements.find(e => e.id_etablissement === idEtablissement);
-
     return (
         <div className="profil-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
             <div className="profil-modal">
