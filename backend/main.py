@@ -4,13 +4,31 @@ from typing import Annotated
 import models
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, SessionLocal, get_db
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 from schema import *
 
 app = FastAPI(title="API Clinique Vétérinaire - ALSI61")
 models.Base.metadata.create_all(bind=engine)
+
+
+def ensure_soft_delete_columns():
+    inspector = inspect(engine)
+    table_columns = {
+        table_name: {column["name"] for column in inspector.get_columns(table_name)}
+        for table_name in inspector.get_table_names()
+    }
+
+    with engine.begin() as connection:
+        if "etablissements" in table_columns and "est_actif" not in table_columns["etablissements"]:
+            connection.execute(text("ALTER TABLE etablissements ADD COLUMN est_actif BOOLEAN NOT NULL DEFAULT 1"))
+
+        if "animaux" in table_columns and "est_actif" not in table_columns["animaux"]:
+            connection.execute(text("ALTER TABLE animaux ADD COLUMN est_actif BOOLEAN NOT NULL DEFAULT 1"))
+
+
+ensure_soft_delete_columns()
 
 
 app.add_middleware(
@@ -138,15 +156,22 @@ async def login(credentials: LoginRequest, db: db_dependency):
 
 @app.patch("/users/desactiver/{id_user}")
 async def deactivate_user(id_user: int, db: db_dependency):
-    # On met à jour le statut directement avec l'ID passé dans l'URL
-    query = text("UPDATE compte_users SET est_actif = 0 WHERE id_user = :id")
-    result = db.execute(query, {"id": id_user})
-    db.commit()
-    
-    # On vérifie si une ligne a bien été modifiée
-    if result.rowcount == 0:
+    user = db.query(models.CompteUser).filter(models.CompteUser.id_user == id_user).first()
+    if not user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
-        
+
+    user.est_actif = False
+
+    # Si c'est un client, on désactive aussi tous ses animaux
+    if user.role == "client":
+        proprio = db.query(models.Proprietaire).filter(models.Proprietaire.id_user == id_user).first()
+        if proprio:
+            db.query(models.Animal).filter(
+                models.Animal.id_proprietaire == proprio.id_proprietaire
+            ).update({models.Animal.est_actif: False}, synchronize_session=False)
+
+    db.commit()
+
     return {"status": "success", "message": f"Le compte {id_user} a été désactivé."}
 
 
@@ -245,13 +270,15 @@ async def create_proprietaire(proprio: ProprietaireCreate, db: db_dependency):
 @app.get("/etablissements/villes")
 async def get_villes(db: db_dependency):
     """Retourne la liste des villes distinctes ayant au moins un établissement."""
-    rows = db.query(models.Etablissement.ville).distinct().all()
+    rows = db.query(models.Etablissement.ville).filter(
+        models.Etablissement.est_actif.is_(True)
+    ).distinct().all()
     return [r[0] for r in rows if r[0]]
 
 @app.get("/etablissements/", response_model=List[EtablissementOut])
 async def get_etablissements(ville: str = None, db: db_dependency = None):
     """Liste tous les établissements, filtrables par ville."""
-    q = db.query(models.Etablissement)
+    q = db.query(models.Etablissement).filter(models.Etablissement.est_actif.is_(True))
     if ville:
         q = q.filter(models.Etablissement.ville == ville)
     return q.all()
@@ -263,7 +290,13 @@ async def create_etablissement(data: EtablissementCreate, db: db_dependency):
         models.Etablissement.ville == data.ville
     ).first()
     if existing:
-        return existing  # Évite les doublons silencieusement
+        existing.nom_etablissement = data.nom_etablissement
+        existing.ville = data.ville
+        existing.adresse = data.adresse
+        existing.est_actif = True
+        db.commit()
+        db.refresh(existing)
+        return existing
     etab = models.Etablissement(**data.model_dump())
     db.add(etab)
     db.commit()
@@ -277,7 +310,8 @@ async def get_vetos_par_ville(ville: str, db: db_dependency):
         models.Etablissement,
         models.Veterinaire.id_etablissement == models.Etablissement.id_etablissement
     ).filter(
-        models.Etablissement.ville == ville
+        models.Etablissement.ville == ville,
+        models.Etablissement.est_actif.is_(True)
     ).options(joinedload(models.Veterinaire.etablissement)).all()
 
     return [
@@ -301,16 +335,17 @@ async def get_vetos_par_ville(ville: str, db: db_dependency):
 @app.delete("/etablissements/{id_etablissement}")
 async def delete_etablissement(id_etablissement: int, db: db_dependency):
     # On vérifie si l'établissement existe
-    check_query = text("SELECT id_etablissement FROM etablissements WHERE id_etablissement = :id")
-    if not db.execute(check_query, {"id": id_etablissement}).fetchone():
+    etablissement = db.query(models.Etablissement).filter(
+        models.Etablissement.id_etablissement == id_etablissement
+    ).first()
+    if not etablissement:
         raise HTTPException(status_code=404, detail="Établissement introuvable")
 
-    # Suppression réelle
-    # Automatiquement, les vétos liés auront leur id_etablissement mis à NULL
-    db.execute(text("DELETE FROM etablissements WHERE id_etablissement = :id"), {"id": id_etablissement})
+    # Soft delete: on désactive l'établissement sans casser les vétérinaires liés
+    etablissement.est_actif = False
     db.commit()
     
-    return {"status": "success", "message": "Établissement supprimé. Les vétérinaires rattachés sont désormais indépendants."}
+    return {"status": "success", "message": "Établissement désactivé sans suppression physique."}
 
 # ─────────────────────────────────────────────
 # VÉTÉRINAIRES
@@ -394,14 +429,16 @@ async def create_animal(animal: AnimalCreate, db: db_dependency):
 @app.get("/animaux/proprietaire/{id_proprio}", response_model=List[AnimalOut])
 async def get_animaux_by_owner(id_proprio: int, db: db_dependency):
     return db.query(models.Animal).filter(
-        models.Animal.id_proprietaire == id_proprio
+        models.Animal.id_proprietaire == id_proprio,
+        models.Animal.est_actif.is_(True)
     ).all()
 
 
 @app.put("/animaux/{animal_id}", response_model=AnimalOut)
 async def update_animal(animal_id: int, animal_update: AnimalBase, db: db_dependency):
     db_animal = db.query(models.Animal).filter(
-        models.Animal.id_animal == animal_id
+        models.Animal.id_animal == animal_id,
+        models.Animal.est_actif.is_(True)
     ).first()
     if not db_animal:
         raise HTTPException(status_code=404, detail="Animal introuvable")
@@ -425,13 +462,20 @@ async def delete_animal(animal_id: int, db: db_dependency):
     ).first()
     if not db_animal:
         raise HTTPException(status_code=404, detail="Animal introuvable")
-    db.delete(db_animal)
+    db_animal.est_actif = False
     db.commit()
 
 
 @app.post("/consultations", response_model=ConsultationOut, status_code=201)
 async def create_consultation(data: ConsultationCreate, db: db_dependency):
     try:
+        animal = db.query(models.Animal).filter(
+            models.Animal.id_animal == data.id_animal,
+            models.Animal.est_actif.is_(True)
+        ).first()
+        if not animal:
+            raise HTTPException(status_code=404, detail="Animal introuvable ou désactivé")
+
         new_consult = models.Consultation(
             date_consult=data.date_consult,
             id_animal=data.id_animal,
@@ -657,7 +701,20 @@ async def get_all_from_category(category: str, db: db_dependency):
     if category not in allowed_tables:
         raise HTTPException(status_code=404, detail="Table non trouvée")
     
-    query = text(f"SELECT * FROM {category}")
+    if category == "proprietaires":
+        query = text("""
+            SELECT p.*, cu.est_actif AS est_actif
+            FROM proprietaires p
+            JOIN compte_users cu ON cu.id_user = p.id_user
+        """)
+    elif category == "veterinaires":
+        query = text("""
+            SELECT v.*, cu.est_actif AS est_actif
+            FROM veterinaires v
+            JOIN compte_users cu ON cu.id_user = v.id_user
+        """)
+    else:
+        query = text(f"SELECT * FROM {category}")
     try:
         result = db.execute(query).mappings().all()
         return result
@@ -679,11 +736,39 @@ async def dynamic_search(category: str, column: str, db: db_dependency, q : str 
 
     # Si q est vide, on fait un SELECT * simple
     if not q.strip():
-        query = text(f"SELECT * FROM {category}")
+        if category == "proprietaires":
+            query = text("""
+                SELECT p.*, cu.est_actif AS est_actif
+                FROM proprietaires p
+                JOIN compte_users cu ON cu.id_user = p.id_user
+            """)
+        elif category == "veterinaires":
+            query = text("""
+                SELECT v.*, cu.est_actif AS est_actif
+                FROM veterinaires v
+                JOIN compte_users cu ON cu.id_user = v.id_user
+            """)
+        else:
+            query = text(f"SELECT * FROM {category}")
         return db.execute(query).mappings().all()
 
     # Sinon, on applique le filtre LIKE
-    query = text(f"SELECT * FROM {category} WHERE {column} LIKE :val")
+    if category == "proprietaires":
+        query = text(f"""
+            SELECT p.*, cu.est_actif AS est_actif
+            FROM proprietaires p
+            JOIN compte_users cu ON cu.id_user = p.id_user
+            WHERE p.{column} LIKE :val
+        """)
+    elif category == "veterinaires":
+        query = text(f"""
+            SELECT v.*, cu.est_actif AS est_actif
+            FROM veterinaires v
+            JOIN compte_users cu ON cu.id_user = v.id_user
+            WHERE v.{column} LIKE :val
+        """)
+    else:
+        query = text(f"SELECT * FROM {category} WHERE {column} LIKE :val")
     return db.execute(query, {"val": f"%{q}%"}).mappings().all()
 
 if __name__ == "__main__":

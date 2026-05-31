@@ -8,6 +8,8 @@ const AdminDashboard = () => {
     const [category, setCategory] = useState("animaux");
     const [searchTerm, setSearchTerm] = useState("");
     const [searchColumn, setSearchColumn] = useState("");
+    const [actionMessage, setActionMessage] = useState("");
+    const [showInactive, setShowInactive] = useState(false);
 
     const searchOptions: any = {
         animaux: [{ label: "Nom Animal", val: "nom_animal" }, { label: "Espèce", val: "espece" }, { label: "Race", val: "race" }],
@@ -15,6 +17,29 @@ const AdminDashboard = () => {
         veterinaires: [{ label: "Nom", val: "nom" }, { label: "Prénom", val: "prenom" }],
         etablissements: [{ label: "Nom Clinique", val: "nom_etablissement" }, { label: "Ville", val: "ville" }],
         medicaments: [{ label: "Nom Médicament", val: "nom_medicament" }]
+    };
+
+    const deleteActions: Record<string, { label: string; method: 'delete' | 'patch'; getUrl: (item: any) => string }> = {
+        animaux: {
+            label: "Désactiver",
+            method: "delete",
+            getUrl: (item) => `/animaux/${item.id_animal}`,
+        },
+        etablissements: {
+            label: "Désactiver",
+            method: "delete",
+            getUrl: (item) => `/etablissements/${item.id_etablissement}`,
+        },
+        proprietaires: {
+            label: "Désactiver",
+            method: "patch",
+            getUrl: (item) => `/users/desactiver/${item.id_user}`,
+        },
+        veterinaires: {
+            label: "Désactiver",
+            method: "patch",
+            getUrl: (item) => `/users/desactiver/${item.id_user}`,
+        },
     };
 
     useEffect(() => {
@@ -50,13 +75,49 @@ const AdminDashboard = () => {
 
     const handleReset = () => {
         setSearchTerm("");
+        setActionMessage("");
         if (searchOptions[category]) {
             setSearchColumn(searchOptions[category][0].val);
         }
         loadAllData();
     };
 
-    const columns = data.length > 0 ? Object.keys(data[0]) : [];
+    const handleDelete = async (item: any) => {
+        const action = deleteActions[category];
+        if (!action) {
+            setActionMessage("La suppression n'est pas disponible pour cette table.");
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Confirmer la désactivation de cette ligne dans ${category.toUpperCase()} ?`
+        );
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            if (action.method === 'patch') {
+                await api.patch(action.getUrl(item));
+            } else {
+                await api.delete(action.getUrl(item));
+            }
+            setActionMessage("Entrée désactivée avec succès.");
+            await loadAllData();
+        } catch (err: any) {
+            setActionMessage(err.response?.data?.detail || "Impossible de désactiver cette entrée.");
+        }
+    };
+
+    const visibleData = data.filter((item) => {
+        if (item.est_actif === undefined || item.est_actif === null) {
+            return true;
+        }
+        return showInactive || item.est_actif === true || item.est_actif === 1;
+    });
+
+    const columns = visibleData.length > 0 ? Object.keys(visibleData[0]) : [];
+    const hasDeleteAction = Boolean(deleteActions[category]);
 
     return (
         <div className="admin-container">
@@ -118,21 +179,41 @@ const AdminDashboard = () => {
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     />
                     <button onClick={handleSearch}>🔍 Filtrer</button>
+                    <label className="inactive-toggle">
+                        <input
+                            type="checkbox"
+                            checked={showInactive}
+                            onChange={(e) => setShowInactive(e.target.checked)}
+                        />
+                        <span>Afficher non actifs</span>
+                    </label>
                     <button className="reset-btn" onClick={handleReset}>🔄</button>
                 </div>
             </div>
+
+            {actionMessage && <div className="action-message">{actionMessage}</div>}
 
             <div className="admin-table-container">
                 <table className="admin-table">
                     <thead>
                         <tr>
                             {columns.map(col => <th key={col}>{col.replace(/_/g, ' ').toUpperCase()}</th>)}
+                            <th>ACTION</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {data.map((item, idx) => (
+                        {visibleData.map((item, idx) => (
                             <tr key={idx}>
                                 {columns.map(col => <td key={col}>{String(item[col] ?? '—')}</td>)}
+                                <td>
+                                    {hasDeleteAction ? (
+                                        <button className="delete-btn" onClick={() => handleDelete(item)}>
+                                            Désactiver
+                                        </button>
+                                    ) : (
+                                        <span className="delete-unavailable">—</span>
+                                    )}
+                                </td>
                             </tr>
                         ))}
                     </tbody>

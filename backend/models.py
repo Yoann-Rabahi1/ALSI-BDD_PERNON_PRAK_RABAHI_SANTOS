@@ -18,6 +18,7 @@ class Etablissement(Base):
     nom_etablissement = Column(String(75))
     ville = Column(String(75))
     adresse = Column(String(75))
+    est_actif = Column(Boolean, default=True)
 
 class Proprietaire(Base):
     __tablename__ = "proprietaires"
@@ -39,6 +40,7 @@ class Animal(Base):
     race = Column(String(50))
     age = Column(Integer)
     poids_kg = Column(Float)
+    est_actif = Column(Boolean, default=True)
     
     id_proprietaire = Column(Integer, ForeignKey("proprietaires.id_proprietaire"))
 
@@ -52,7 +54,7 @@ class Veterinaire(Base):
     nom = Column(String(50), nullable=False)
     prenom = Column(String(50), nullable=False)
     telephone = Column(String(10), nullable=False)
-    id_etablissement = Column(Integer, ForeignKey("etablissements.id_etablissement"), nullable=True)
+    id_etablissement = Column(Integer, ForeignKey("etablissements.id_etablissement", ondelete="SET NULL"), nullable=True)
     id_user = Column(Integer, ForeignKey("compte_users.id_user"), nullable=False)
 
     etablissement = relationship("Etablissement")
