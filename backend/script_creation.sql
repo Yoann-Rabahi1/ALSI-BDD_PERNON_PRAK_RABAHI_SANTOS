@@ -23,7 +23,11 @@ CREATE TABLE IF NOT EXISTS animaux (
     espece VARCHAR(50),
     race VARCHAR(50),
     age INT,
-    poids_kg DECIMAL(5,2) DEFAULT 0.00 -- Modifié pour éviter les NULL latents
+    poids_kg DECIMAL(5,2) DEFAULT 0.00,
+    id_proprietaire INT NOT NULL,
+    FOREIGN KEY (id_proprietaire) REFERENCES proprietaire(id_proprietaire) ON DELETE RESTRICT,
+
+    
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS medicaments (
@@ -50,9 +54,7 @@ CREATE TABLE IF NOT EXISTS proprietaires (
     nom VARCHAR(75) NOT NULL,
     prenom VARCHAR(75) NOT NULL,
     telephone VARCHAR(20),
-    id_animal INT NOT NULL,
     id_user INT NOT NULL,
-    FOREIGN KEY (id_animal) REFERENCES animaux(id_animal) ON DELETE RESTRICT,
     FOREIGN KEY (id_user) REFERENCES compte_users(id_user) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
