@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS veterinaires (
     prenom VARCHAR(50) NOT NULL,
     id_etablissement INT NULL,
     id_user INT NOT NULL,
-    FOREIGN KEY (id_etablissement) REFERENCES etablissements (id_etablissement) ON DELETE SET NULL,
+    FOREIGN KEY (id_etablissement) REFERENCES etablissements (id_etablissement) ON DELETE RESTRICT,
     FOREIGN KEY (id_user) REFERENCES compte_users (id_user) ON DELETE RESTRICT
 ) ENGINE = InnoDB;
 
