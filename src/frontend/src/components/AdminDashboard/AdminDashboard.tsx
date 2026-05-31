@@ -16,7 +16,17 @@ const AdminDashboard = () => {
         proprietaires: [{ label: "Nom", val: "nom" }, { label: "Prénom", val: "prenom" }, { label: "Téléphone", val: "telephone" }],
         veterinaires: [{ label: "Nom", val: "nom" }, { label: "Prénom", val: "prenom" }],
         etablissements: [{ label: "Nom Clinique", val: "nom_etablissement" }, { label: "Ville", val: "ville" }],
-        medicaments: [{ label: "Nom Médicament", val: "nom_medicament" }]
+        medicaments: [{ label: "Nom Médicament", val: "nom_medicament" }],
+        consultations: [
+            { label: "ID Consultation", val: "id_consult" },
+            { label: "Diagnostic", val: "diagnostic" },
+            { label: "Date", val: "date_consult" }
+        ],
+        prescriptions: [
+            { label: "ID Prescription", val: "id_prescription" },
+            { label: "Posologie", val: "posologie" },
+            { label: "Durée", val: "duree_traitement" }
+        ]
     };
 
     const rowActions: Record<string, {
