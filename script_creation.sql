@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS animaux (
     nom_animal VARCHAR(75) NOT NULL,
     espece VARCHAR(50),
     race VARCHAR(50),
-    age INT,
-    poids_kg DECIMAL(5,2) DEFAULT 0.00,
+    age INT CHECK(age>=0),
+    poids_kg DECIMAL(5,2) DEFAULT 0.00 CHECK (poids_kg >= 0),
     id_proprietaire INT NOT NULL,
     FOREIGN KEY (id_proprietaire) REFERENCES proprietaire(id_proprietaire) ON DELETE RESTRICT,
 
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS medicaments (
     id_medicament INT PRIMARY KEY AUTO_INCREMENT,
     nom_medicament VARCHAR(100) NOT NULL,
     description TEXT,
-    prix_unitaire DECIMAL(10, 2) NOT NULL
+    prix_unitaire DECIMAL(10,2) NOT NULL DEFAULT 0.00 CHECK (prix_unitaire >= 0)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS veterinaires (
