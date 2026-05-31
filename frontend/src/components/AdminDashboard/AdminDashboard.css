@@ -138,9 +138,27 @@ select:focus, input:focus {
     display: flex;
     gap: 0.5rem;
     flex-grow: 1;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .search-box input { flex-grow: 1; }
+
+.inactive-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    user-select: none;
+    white-space: nowrap;
+}
+
+.inactive-toggle input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--primary);
+}
 
 button {
     padding: 0.625rem 1.25rem;
@@ -153,11 +171,21 @@ button {
 
 button:hover { opacity: 0.9; }
 
-button:first-of-type { background: var(--primary); color: white; }
+.search-box button:first-of-type { background: var(--primary); color: white; }
 
 .reset-btn {
     background: #e2e8f0;
     color: #475569;
+}
+
+.action-message {
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    background: #ecfeff;
+    border: 1px solid #a5f3fc;
+    color: #155e75;
+    font-size: 0.9rem;
 }
 
 /* TABLEAU */
@@ -188,6 +216,7 @@ button:first-of-type { background: var(--primary); color: white; }
     padding: 1rem;
     font-size: 0.875rem;
     border-bottom: 1px solid var(--border);
+    vertical-align: middle;
 }
 
 .admin-table tr:hover {
@@ -198,4 +227,35 @@ button:first-of-type { background: var(--primary); color: white; }
     padding: 3rem;
     text-align: center;
     color: var(--text-muted);
+}
+
+.delete-btn {
+    background: #ef4444;
+    color: #ffffff;
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.delete-btn:hover {
+    background: #dc2626;
+}
+
+.reactivate-btn {
+    background: #16a34a;
+    color: #ffffff;
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.reactivate-btn:hover {
+    background: #15803d;
+}
+
+.delete-unavailable {
+    color: var(--text-muted);
+    font-size: 0.9rem;
 }
